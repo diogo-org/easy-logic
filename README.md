@@ -28,10 +28,15 @@ This generates optimized production files in the `dist/` directory.
 
 ### Automatic Deployment
 
-Push to `main` or `master` branch and GitHub Actions will automatically:
-1. Install dependencies
-2. Build the project
-3. Deploy to GitHub Pages
+Push to `main` branch and GitHub Actions will automatically:
+1. Run all tests
+2. Check that coverage is 80% or higher
+3. Build the project (only if tests pass)
+4. Deploy to GitHub Pages (only if build succeeds)
+
+The deployment will fail if:
+- Any tests fail
+- Code coverage falls below 80%
 
 You can also manually trigger the workflow from the Actions tab in your GitHub repository.
 
