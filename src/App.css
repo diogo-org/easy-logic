@@ -1,0 +1,16 @@
+import './App.css'
+
+function App() {
+  return (
+    <>
+      <div>
+        <h1>Easy Logic</h1>
+      </div>
+      <div className="card">
+        <p>Welcome to your React + TypeScript application</p>
+      </div>
+    </>
+  )
+}
+
+export default App
