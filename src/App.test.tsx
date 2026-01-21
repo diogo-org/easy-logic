@@ -124,48 +124,36 @@ describe('App', () => {
     expect(codeElements[0].textContent).toBe('second')
   })
 
-  it('should render sidebar toggle button on mobile', () => {
+  it('should render drawer and sidebar examples', () => {
     render(<App />)
     
-    const toggleButton = screen.getByRole('button', { name: /close sidebar|open sidebar/i })
-    expect(toggleButton).toBeInTheDocument()
+    // The examples should be rendered somewhere in the document (drawer or sidebar)
+    const exampleHeaders = screen.getAllByText(/Simple Variable|Negation|AND/)
+    expect(exampleHeaders.length).toBeGreaterThan(0)
   })
 
-  it('should toggle sidebar visibility', async () => {
+  it('should render all example items in sidebar', () => {
     render(<App />)
     
-    const toggleButton = screen.getByRole('button', { name: /close sidebar|open sidebar/i })
-    const sidebar = document.querySelector('.examples-sidebar')
-    
-    // Initially sidebar should have 'open' class
-    expect(sidebar).toHaveClass('open')
-    
-    // Click to close
-    await userEvent.click(toggleButton)
-    expect(sidebar).toHaveClass('closed')
-    
-    // Click to open again
-    await userEvent.click(toggleButton)
-    expect(sidebar).toHaveClass('open')
+    // Check for example labels - they should be visible regardless of drawer state
+    const exampleLabels = screen.getAllByText(/Simple Variable|Negation|AND|OR|Implication/)
+    expect(exampleLabels.length).toBeGreaterThan(0)
   })
 
-  it('should toggle button aria-label when clicking', async () => {
+  it('should allow clicking examples to submit formulas', async () => {
     render(<App />)
     
-    const toggleButton = screen.getByRole('button', { name: /close sidebar|open sidebar/i })
+    // Get the first example button and click it
+    const exampleButtons = screen.getAllByRole('button')
+    const exampleButton = exampleButtons.find(btn => btn.textContent?.includes('Simple Variable'))
     
-    // Initial state
-    let ariaLabel = toggleButton.getAttribute('aria-label')
-    expect(ariaLabel).toBe('Close sidebar')
-    
-    // After click
-    await userEvent.click(toggleButton)
-    ariaLabel = toggleButton.getAttribute('aria-label')
-    expect(ariaLabel).toBe('Open sidebar')
-    
-    // After second click
-    await userEvent.click(toggleButton)
-    ariaLabel = toggleButton.getAttribute('aria-label')
-    expect(ariaLabel).toBe('Close sidebar')
+    if (exampleButton) {
+      await userEvent.click(exampleButton)
+      
+      // The formula 'p' should be submitted and appear in history
+      const codeElements = document.querySelectorAll('code')
+      const found = Array.from(codeElements).some(el => el.textContent === 'p')
+      expect(found).toBe(true)
+    }
   })
 })

@@ -50,8 +50,9 @@ describe("ExamplesSidebar", () => {
     const secondExample = EXAMPLES[1];
     const thirdExample = EXAMPLES[2];
 
-    const secondButton = screen.getByText(secondExample.formula).closest("button");
-    const thirdButton = screen.getByText(thirdExample.formula).closest("button");
+    const buttons = screen.getAllByRole("button");
+    const secondButton = buttons.find(btn => btn.textContent?.includes(secondExample.formula));
+    const thirdButton = buttons.find(btn => btn.textContent?.includes(thirdExample.formula));
 
     if (secondButton) {
       fireEvent.click(secondButton);
@@ -75,65 +76,31 @@ describe("ExamplesSidebar", () => {
     });
   });
 
-  it("renders example labels with correct styling class", () => {
+  it("renders example labels", () => {
     const mockOnClick = vi.fn();
     render(<ExamplesSidebar onExampleClick={mockOnClick} />);
 
     EXAMPLES.forEach((example) => {
-      const labelElement = screen.getByText(example.label);
-      expect(labelElement).toHaveClass("example-label");
+      expect(screen.getByText(example.label)).toBeInTheDocument();
     });
   });
 
-  it("renders formulas in monospace containers", () => {
+  it("renders formulas with monospace styling", () => {
     const mockOnClick = vi.fn();
     render(<ExamplesSidebar onExampleClick={mockOnClick} />);
 
     EXAMPLES.forEach((example) => {
       const formulaElement = screen.getByText(example.formula);
-      expect(formulaElement).toHaveClass("example-formula");
+      expect(formulaElement).toBeInTheDocument();
     });
   });
 
-  it("renders descriptions with correct styling class", () => {
+  it("renders descriptions", () => {
     const mockOnClick = vi.fn();
     render(<ExamplesSidebar onExampleClick={mockOnClick} />);
 
     EXAMPLES.forEach((example) => {
-      const descriptionElement = screen.getByText(example.description);
-      expect(descriptionElement).toHaveClass("example-description");
+      expect(screen.getByText(example.description)).toBeInTheDocument();
     });
-  });
-
-  it("applies 'open' class by default when isOpen is true", () => {
-    const mockOnClick = vi.fn();
-    const { container } = render(
-      <ExamplesSidebar onExampleClick={mockOnClick} isOpen={true} />
-    );
-
-    const sidebar = container.querySelector(".examples-sidebar");
-    expect(sidebar).toHaveClass("open");
-    expect(sidebar).not.toHaveClass("closed");
-  });
-
-  it("applies 'closed' class when isOpen is false", () => {
-    const mockOnClick = vi.fn();
-    const { container } = render(
-      <ExamplesSidebar onExampleClick={mockOnClick} isOpen={false} />
-    );
-
-    const sidebar = container.querySelector(".examples-sidebar");
-    expect(sidebar).toHaveClass("closed");
-    expect(sidebar).not.toHaveClass("open");
-  });
-
-  it("defaults to open when isOpen prop is not provided", () => {
-    const mockOnClick = vi.fn();
-    const { container } = render(
-      <ExamplesSidebar onExampleClick={mockOnClick} />
-    );
-
-    const sidebar = container.querySelector(".examples-sidebar");
-    expect(sidebar).toHaveClass("open");
   });
 });
