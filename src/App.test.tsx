@@ -25,8 +25,9 @@ describe('App', () => {
     await userEvent.type(input, 'p ^ q{Enter}')
     
     // The formula should be in the code element
-    const codeElement = screen.getByText('p ^ q')
-    expect(codeElement).toBeInTheDocument()
+    const codeElements = document.querySelectorAll('code')
+    const found = Array.from(codeElements).some(el => el.textContent === 'p ^ q')
+    expect(found).toBe(true)
   })
 
   it('should display multiple formulas', async () => {
@@ -96,7 +97,10 @@ describe('App', () => {
     const input = screen.getByRole('textbox')
     await userEvent.type(input, '(p -> q) ^ (q -> r) -> (p -> r){Enter}')
     
-    expect(screen.getByText('(p -> q) ^ (q -> r) -> (p -> r)')).toBeInTheDocument()
+    // Find the code element specifically (not in the sidebar)
+    const codeElements = document.querySelectorAll('code')
+    const found = Array.from(codeElements).some(el => el.textContent === '(p -> q) ^ (q -> r) -> (p -> r)')
+    expect(found).toBe(true)
   })
 
   it('should display latest formula first', async () => {

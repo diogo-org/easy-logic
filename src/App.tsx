@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { FormulaInput } from './components/FormulaInput'
 import { FormulaDisplay } from './components/FormulaDisplay'
+import { ExamplesSidebar } from './components/ExamplesSidebar'
 import { parseFormula } from './utils/formulaParser'
 import './App.css'
 
@@ -25,24 +26,32 @@ function App() {
     ])
   }
 
+  const handleExampleClick = (formula: string) => {
+    handleFormulaSubmit(formula)
+  }
+
   return (
-    <div className="app-container">
-      <div className="header">
-        <h1>Easy Logic</h1>
-        <p>Propositional Logic Formula Renderer</p>
-      </div>
+    <div className="app-layout">
+      <ExamplesSidebar onExampleClick={handleExampleClick} />
+      
+      <div className="app-container">
+        <div className="header">
+          <h1>Easy Logic</h1>
+          <p>Propositional Logic Formula Renderer</p>
+        </div>
 
-      <FormulaInput onSubmit={handleFormulaSubmit} />
+        <FormulaInput onSubmit={handleFormulaSubmit} />
 
-      <div className="formulas-history">
-        {formulas.map((formula, index) => (
-          <div key={index} className="formula-item">
-            <div className="formula-original">
-              <code>{formula.original}</code>
+        <div className="formulas-history">
+          {formulas.map((formula, index) => (
+            <div key={index} className="formula-item">
+              <div className="formula-original">
+                <code>{formula.original}</code>
+              </div>
+              <FormulaDisplay latex={formula.latex} error={formula.error} />
             </div>
-            <FormulaDisplay latex={formula.latex} error={formula.error} />
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )
