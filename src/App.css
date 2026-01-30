@@ -4,6 +4,11 @@
   margin: 0 auto;
   padding: 2rem 1rem;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .header {
@@ -43,6 +48,8 @@
   color: inherit;
   font-family: monospace;
   transition: border-color 0.3s;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .formula-input:focus {
@@ -74,9 +81,18 @@
   background-color: rgba(100, 108, 255, 0.05);
 }
 
-.formula-original {
+.formula-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.formula-original {
+  margin-bottom: 0;
   font-size: 0.9rem;
+  flex: 1;
 }
 
 .formula-original code {
@@ -84,6 +100,25 @@
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
   font-family: monospace;
+}
+
+.remove-button {
+  padding: 0.5rem;
+  background-color: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.remove-button:hover {
+  background-color: rgba(255, 0, 0, 0.2);
+  border-color: rgba(255, 0, 0, 0.5);
 }
 
 .formula-display {

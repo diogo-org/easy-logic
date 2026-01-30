@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Box, Drawer, AppBar, Toolbar, IconButton, useMediaQuery, useTheme } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
+import DeleteIcon from '@mui/icons-material/Delete'
 import { FormulaInput } from './components/FormulaInput'
 import { FormulaDisplay } from './components/FormulaDisplay'
 import { ExamplesSidebar } from './components/ExamplesSidebar'
@@ -40,6 +41,10 @@ function App() {
     if (isMobile) {
       setDrawerOpen(false)
     }
+  }
+
+  const handleRemoveFormula = (index: number) => {
+    setFormulas(formulas.filter((_, i) => i !== index))
   }
 
   return (
@@ -81,6 +86,7 @@ function App() {
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
+          alignItems: 'center',
           mt: isMobile ? '64px' : 0,
         }}
       >
@@ -97,8 +103,17 @@ function App() {
           <div className="formulas-history">
             {formulas.map((formula, index) => (
               <div key={index} className="formula-item">
-                <div className="formula-original">
-                  <code>{formula.original}</code>
+                <div className="formula-header">
+                  <div className="formula-original">
+                    <code>{formula.original}</code>
+                  </div>
+                  <button
+                    className="remove-button"
+                    onClick={() => handleRemoveFormula(index)}
+                    title={t('remove')}
+                  >
+                    <DeleteIcon sx={{ fontSize: '1.2rem' }} />
+                  </button>
                 </div>
                 <FormulaDisplay latex={formula.latex} error={formula.error} />
               </div>

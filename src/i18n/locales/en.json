@@ -3,6 +3,7 @@
   "subtitle": "Propositional Logic Formula Renderer",
   "examples": "Examples",
   "formulaInput": "Enter Formula",
+  "remove": "Remove formula",
   "syntaxHelp": "Operators: ^ (AND), | (OR), ~ (NOT), -> (IMPLIES), <-> (IFF), () (parentheses), T (true), F (false)",
   "errorPrefix": "Error:",
   "simpleVariable": "Simple Variable",

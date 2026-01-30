@@ -3,6 +3,7 @@
   "subtitle": "Renderizador de Fórmulas de Lógica Proposicional",
   "examples": "Exemplos",
   "formulaInput": "Digite a Fórmula",
+  "remove": "Remover fórmula",
   "syntaxHelp": "Operadores: ^ (E), | (OU), ~ (NÃO), -> (IMPLICA), <-> (SE E SOMENTE SE), () (parênteses), T (verdadeiro), F (falso)",
   "errorPrefix": "Erro:",
   "simpleVariable": "Variável Simples",
