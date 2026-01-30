@@ -105,4 +105,11 @@ export const EXAMPLES: Example[] = [
     description: 'If p→q and p, then q',
     descriptionKey: 'modusPonensDesc',
   },
+  {
+    label: 'Complex Formula',
+    labelKey: 'complexFormula',
+    formula: '((p ^ q) | (r ^ s)) -> ((t | u) <-> (p ^ r))',
+    description: 'Large formula with 6 variables',
+    descriptionKey: 'complexFormulaDesc',
+  },
 ]

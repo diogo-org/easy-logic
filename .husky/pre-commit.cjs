@@ -66,8 +66,58 @@ try {
 }
 console.log('');
 
-// Step 3: Build check
-console.log('Step 3: Building project...');
+// Step 3: Check code duplication
+console.log('Step 3: Checking code duplication...');
+try {
+  // Run jscpd - it will exit with error code if threshold is exceeded
+  execSync('npx jscpd src --reporters json --silent', { 
+    stdio: 'pipe',
+    encoding: 'utf-8'
+  });
+  
+  // Read the report file
+  const reportPath = path.join(process.cwd(), 'report', 'jscpd-report.json');
+  if (fs.existsSync(reportPath)) {
+    const reportData = fs.readFileSync(reportPath, 'utf-8');
+    const report = JSON.parse(reportData);
+    const duplicationPercentage = report.statistics?.total?.percentage || 0;
+    
+    const DUPLICATION_THRESHOLD = 1;
+    if (duplicationPercentage > DUPLICATION_THRESHOLD) {
+      printStatus(false, `Code duplication too high: ${duplicationPercentage.toFixed(2)}% (maximum: ${DUPLICATION_THRESHOLD}%)`);
+      log(colors.red, `\n❌ Commit aborted: Code duplication must be at most ${DUPLICATION_THRESHOLD}%`);
+      log(colors.yellow, 'Run "npx jscpd src" to see detailed duplication report');
+      process.exit(1);
+    }
+    
+    printStatus(true, `Duplication check passed (${duplicationPercentage.toFixed(2)}% <= ${DUPLICATION_THRESHOLD}%)`);
+  } else {
+    // No report file means no duplication
+    printStatus(true, 'Duplication check passed (0.00% <= 1%)');
+  }
+} catch (error) {
+  // jscpd exits with non-zero if duplication exceeds threshold
+  const reportPath = path.join(process.cwd(), 'report', 'jscpd-report.json');
+  if (fs.existsSync(reportPath)) {
+    const reportData = fs.readFileSync(reportPath, 'utf-8');
+    const report = JSON.parse(reportData);
+    const duplicationPercentage = report.statistics?.total?.percentage || 0;
+    
+    const DUPLICATION_THRESHOLD = 1;
+    printStatus(false, `Code duplication too high: ${duplicationPercentage.toFixed(2)}% (maximum: ${DUPLICATION_THRESHOLD}%)`);
+    log(colors.red, `\n❌ Commit aborted: Code duplication must be at most ${DUPLICATION_THRESHOLD}%`);
+    log(colors.yellow, 'Run "npx jscpd src" to see detailed duplication report');
+    process.exit(1);
+  } else {
+    printStatus(false, 'Duplication check failed - could not read report');
+    log(colors.red, '\n❌ Commit aborted: Could not determine duplication percentage');
+    process.exit(1);
+  }
+}
+console.log('');
+
+// Step 4: Build check
+console.log('Step 4: Building project...');
 try {
   const buildOutput = execSync('npm run build', { 
     stdio: 'pipe',

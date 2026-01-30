@@ -4,6 +4,7 @@
   "examples": "Examples",
   "formulaInput": "Enter Formula",
   "remove": "Remove formula",
+  "truthTable": "Truth Table",
   "syntaxHelp": "Operators: ^ (AND), | (OR), ~ (NOT), -> (IMPLIES), <-> (IFF), () (parentheses), T (true), F (false)",
   "errorPrefix": "Error:",
   "simpleVariable": "Simple Variable",
@@ -33,5 +34,7 @@
   "transitiveProperty": "Transitive Property",
   "transitivePropertyDesc": "If p→q and q→r, then p→r",
   "modusPonens": "Modus Ponens",
-  "modusPonensDesc": "If p→q and p, then q"
+  "modusPonensDesc": "If p→q and p, then q",
+  "complexFormula": "Complex Formula",
+  "complexFormulaDesc": "Large formula with 6 variables"
 }

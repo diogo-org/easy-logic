@@ -8,9 +8,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "vitest --run",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage",
+    "test:coverage": "vitest --run --coverage",
     "prepare": "husky install"
   },
   "dependencies": {
@@ -23,7 +23,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^16.5.3",
-    "react-katex": "^3.1.0"
+    "react-katex": "^3.1.0",
+    "react-router-dom": "^7.13.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
@@ -36,6 +37,7 @@
     "@vitest/ui": "^4.0.17",
     "happy-dom": "^20.3.4",
     "husky": "^9.1.7",
+    "jscpd": "^4.0.8",
     "jsdom": "^27.4.0",
     "typescript": "^5.4.5",
     "vite": "^5.1.0",

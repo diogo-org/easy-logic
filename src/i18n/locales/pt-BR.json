@@ -4,6 +4,7 @@
   "examples": "Exemplos",
   "formulaInput": "Digite a Fórmula",
   "remove": "Remover fórmula",
+  "truthTable": "Tabela Verdade",
   "syntaxHelp": "Operadores: ^ (E), | (OU), ~ (NÃO), -> (IMPLICA), <-> (SE E SOMENTE SE), () (parênteses), T (verdadeiro), F (falso)",
   "errorPrefix": "Erro:",
   "simpleVariable": "Variável Simples",
@@ -33,5 +34,7 @@
   "transitiveProperty": "Propriedade Transitiva",
   "transitivePropertyDesc": "Se p→q e q→r, então p→r",
   "modusPonens": "Modus Ponens",
-  "modusPonensDesc": "Se p→q e p, então q"
+  "modusPonensDesc": "Se p→q e p, então q",
+  "complexFormula": "Fórmula Complexa",
+  "complexFormulaDesc": "Fórmula grande com 6 variáveis"
 }

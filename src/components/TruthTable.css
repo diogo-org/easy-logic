@@ -1,0 +1,156 @@
+.truth-table-container {
+  width: 100%;
+  margin-top: 2rem;
+}
+
+.truth-table-header {
+  margin-bottom: 1.5rem;
+}
+
+.truth-table-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.truth-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid rgba(100, 108, 255, 0.3);
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.truth-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: rgba(100, 108, 255, 0.05);
+}
+
+.truth-table thead {
+  background-color: rgba(100, 108, 255, 0.1);
+}
+
+.truth-table th {
+  padding: 0.75rem;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 2px solid rgba(100, 108, 255, 0.3);
+  font-family: monospace;
+}
+
+.truth-table td {
+  padding: 0.75rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(100, 108, 255, 0.2);
+  font-family: monospace;
+}
+
+.truth-table tbody tr:hover {
+  background-color: rgba(100, 108, 255, 0.1);
+}
+
+.value-cell {
+  font-weight: 500;
+}
+
+.result-column {
+  background-color: rgba(100, 108, 255, 0.15);
+  font-weight: 600;
+}
+
+.result-cell {
+  background-color: rgba(100, 108, 255, 0.1);
+  font-weight: 600;
+}
+
+.result-value {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.result-value.true {
+  background-color: rgba(0, 200, 0, 0.2);
+  color: #00c800;
+}
+
+.result-value.false {
+  background-color: rgba(200, 0, 0, 0.2);
+  color: #c80000;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.pagination-button {
+  padding: 0.5rem 1rem;
+  background-color: rgba(100, 108, 255, 0.1);
+  border: 1px solid rgba(100, 108, 255, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background-color: rgba(100, 108, 255, 0.2);
+  border-color: rgba(100, 108, 255, 0.5);
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-weight: 500;
+  min-width: 150px;
+  text-align: center;
+}
+
+@media (prefers-color-scheme: light) {
+  .truth-table-wrapper {
+    border-color: rgba(0, 102, 204, 0.3);
+  }
+
+  .truth-table {
+    background-color: rgba(0, 102, 204, 0.05);
+  }
+
+  .truth-table thead {
+    background-color: rgba(0, 102, 204, 0.1);
+  }
+
+  .truth-table th {
+    border-bottom-color: rgba(0, 102, 204, 0.3);
+  }
+
+  .truth-table td {
+    border-bottom-color: rgba(0, 102, 204, 0.2);
+  }
+
+  .truth-table tbody tr:hover {
+    background-color: rgba(0, 102, 204, 0.1);
+  }
+
+  .result-column {
+    background-color: rgba(0, 102, 204, 0.15);
+  }
+
+  .result-cell {
+    background-color: rgba(0, 102, 204, 0.1);
+  }
+
+  .pagination-button {
+    background-color: rgba(0, 102, 204, 0.1);
+    border-color: rgba(0, 102, 204, 0.3);
+  }
+
+  .pagination-button:hover:not(:disabled) {
+    background-color: rgba(0, 102, 204, 0.2);
+    border-color: rgba(0, 102, 204, 0.5);
+  }
+}

@@ -1,15 +1,15 @@
 import { useState } from 'react'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Box, Drawer, AppBar, Toolbar, IconButton, useMediaQuery, useTheme } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
-import DeleteIcon from '@mui/icons-material/Delete'
-import { FormulaInput } from './components/FormulaInput'
-import { FormulaDisplay } from './components/FormulaDisplay'
 import { ExamplesSidebar } from './components/ExamplesSidebar'
-import { parseFormula } from './utils/formulaParser'
+import { ExampleProvider, useExampleContext } from './context/ExampleContext'
+import { HomePage } from './pages/HomePage'
+import { TruthTablePage } from './pages/TruthTablePage'
 import './App.css'
 
-interface FormulaResult {
+export interface FormulaResult {
   original: string
   latex: string
   error?: string
@@ -17,39 +17,27 @@ interface FormulaResult {
 
 const DRAWER_WIDTH = 300
 
-function App() {
+function AppLayout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation()
-  const [formulas, setFormulas] = useState<FormulaResult[]>([])
   const [drawerOpen, setDrawerOpen] = useState(false)
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const { setSelectedExample } = useExampleContext()
+  const location = useLocation()
 
-  const handleFormulaSubmit = (formula: string) => {
-    const result = parseFormula(formula)
-    setFormulas([
-      {
-        original: formula,
-        latex: result.latex,
-        error: result.error,
-      },
-      ...formulas,
-    ])
-  }
+  // Only show sidebar on home page
+  const showSidebar = location.pathname === '/'
 
   const handleExampleClick = (formula: string) => {
-    handleFormulaSubmit(formula)
+    setSelectedExample(formula)
     if (isMobile) {
       setDrawerOpen(false)
     }
   }
 
-  const handleRemoveFormula = (index: number) => {
-    setFormulas(formulas.filter((_, i) => i !== index))
-  }
-
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      {isMobile && (
+      {isMobile && showSidebar && (
         <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
           <Toolbar>
             <IconButton
@@ -65,21 +53,23 @@ function App() {
         </AppBar>
       )}
 
-      <Drawer
-        variant={isMobile ? 'temporary' : 'permanent'}
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        sx={{
-          width: DRAWER_WIDTH,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
+      {showSidebar && (
+        <Drawer
+          variant={isMobile ? 'temporary' : 'permanent'}
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          sx={{
             width: DRAWER_WIDTH,
-            boxSizing: 'border-box',
-          },
-        }}
-      >
-        <ExamplesSidebar onExampleClick={handleExampleClick} />
-      </Drawer>
+            flexShrink: 0,
+            '& .MuiDrawer-paper': {
+              width: DRAWER_WIDTH,
+              boxSizing: 'border-box',
+            },
+          }}
+        >
+          <ExamplesSidebar onExampleClick={handleExampleClick} />
+        </Drawer>
+      )}
 
       <Box
         sx={{
@@ -87,41 +77,36 @@ function App() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          mt: isMobile ? '64px' : 0,
+          mt: isMobile && showSidebar ? '64px' : 0,
         }}
       >
-        <div className="app-container">
-          {!isMobile && (
-            <div className="header">
-              <h1>{t('title')}</h1>
-              <p>{t('subtitle')}</p>
-            </div>
-          )}
-
-          <FormulaInput onSubmit={handleFormulaSubmit} />
-
-          <div className="formulas-history">
-            {formulas.map((formula, index) => (
-              <div key={index} className="formula-item">
-                <div className="formula-header">
-                  <div className="formula-original">
-                    <code>{formula.original}</code>
-                  </div>
-                  <button
-                    className="remove-button"
-                    onClick={() => handleRemoveFormula(index)}
-                    title={t('remove')}
-                  >
-                    <DeleteIcon sx={{ fontSize: '1.2rem' }} />
-                  </button>
-                </div>
-                <FormulaDisplay latex={formula.latex} error={formula.error} />
-              </div>
-            ))}
-          </div>
-        </div>
+        {children}
       </Box>
     </Box>
+  )
+}
+
+function AppContent() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/truth-table" element={<TruthTablePage />} />
+    </Routes>
+  )
+}
+
+function App() {
+  // Use production basename only when built for production (check if DEV mode is false)
+  const basename = import.meta.env.DEV ? '/' : '/easy-logic'
+  
+  return (
+    <BrowserRouter basename={basename}>
+      <ExampleProvider>
+        <AppLayout>
+          <AppContent />
+        </AppLayout>
+      </ExampleProvider>
+    </BrowserRouter>
   )
 }
 
