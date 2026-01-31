@@ -53,6 +53,10 @@ export function HomePage() {
     navigate('/truth-table', { state: { formula } })
   }
 
+  const handleProve = (formula: FormulaResult) => {
+    navigate('/proof-assistant', { state: { formula: formula.original } })
+  }
+
   return (
     <div className="app-container">
       {!isMobile && (
@@ -81,12 +85,20 @@ export function HomePage() {
             </div>
             <FormulaDisplay latex={formula.latex} error={formula.error} />
             {!formula.error && (
-              <button
-                className="truth-table-button"
-                onClick={() => handleTruthTable(formula)}
-              >
-                {t('truthTable')}
-              </button>
+              <div className="formula-actions">
+                <button
+                  className="truth-table-button"
+                  onClick={() => handleTruthTable(formula)}
+                >
+                  {t('truthTable')}
+                </button>
+                <button
+                  className="truth-table-button"
+                  onClick={() => handleProve(formula)}
+                >
+                  {t('prove')}
+                </button>
+              </div>
             )}
           </div>
         ))}

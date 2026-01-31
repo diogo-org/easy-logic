@@ -13,9 +13,18 @@ body {
 
 #root {
   width: 100%;
+  max-width: 100%;
   margin: 0 auto;
   text-align: center;
   padding: 2rem;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+@media (max-width: 600px) {
+  #root {
+    padding: 1rem;
+  }
 }
 
 h1 {

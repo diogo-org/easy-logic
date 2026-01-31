@@ -7,6 +7,7 @@ export default defineConfig({
     globals: true,
     environment: 'happy-dom',
     setupFiles: ['./src/test.setup.ts'],
+    fileParallelism: false, // Run test files sequentially to avoid file handle issues on Windows
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

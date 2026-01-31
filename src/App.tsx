@@ -7,6 +7,7 @@ import { ExamplesSidebar } from './components/ExamplesSidebar'
 import { ExampleProvider, useExampleContext } from './context/ExampleContext'
 import { HomePage } from './pages/HomePage'
 import { TruthTablePage } from './pages/TruthTablePage'
+import ProofAssistantPage from './pages/ProofAssistantPage'
 import './App.css'
 
 export interface FormulaResult {
@@ -91,6 +92,7 @@ function AppContent() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/truth-table" element={<TruthTablePage />} />
+      <Route path="/proof-assistant" element={<ProofAssistantPage />} />
     </Routes>
   )
 }
