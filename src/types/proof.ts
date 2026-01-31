@@ -21,8 +21,8 @@ export interface ProofState {
 
 export interface Rule {
   id: string
-  name: string
-  description: string
+  nameKey: string // Translation key for name
+  descriptionKey: string // Translation key for description
   category: 'basic' | 'introduction' | 'elimination' | 'assumption'
   requiredSteps: number // How many previous steps needed
   pattern?: string // Pattern to match
@@ -33,12 +33,18 @@ export interface ApplicableRule extends Rule {
   reason?: string // Why it's not applicable
 }
 
+export interface SuggestedGoal {
+  labelKey: string // Translation key for label
+  formula: string
+  descriptionKey: string // Translation key for description
+}
+
 export interface KnowledgeBase {
   id: string
-  name: string
-  description: string
+  nameKey: string // Translation key for name
+  descriptionKey: string // Translation key for description
   premises: string[]
-  suggestedGoals: Array<{ label: string; formula: string; description: string }>
+  suggestedGoals: SuggestedGoal[]
 }
 
 /**
@@ -52,5 +58,5 @@ export interface ProofSystem {
   checkApplicability(rule: Rule, state: ProofState): ApplicableRule
   applyRule(rule: Rule, state: ProofState, selectedSteps: number[], userInput?: string): ProofStep | null
   validateProof(state: ProofState): boolean
-  getSuggestedGoals(): Array<{ label: string; formula: string; description: string }>
+  getSuggestedGoals(): SuggestedGoal[]
 }

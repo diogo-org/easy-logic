@@ -9,9 +9,9 @@ describe('NaturalDeduction', () => {
     it('returns a list of suggested goals', () => {
       const goals = nd.getSuggestedGoals()
       expect(goals.length).toBeGreaterThan(0)
-      expect(goals[0]).toHaveProperty('label')
+      expect(goals[0]).toHaveProperty('labelKey')
       expect(goals[0]).toHaveProperty('formula')
-      expect(goals[0]).toHaveProperty('description')
+      expect(goals[0]).toHaveProperty('descriptionKey')
     })
   })
 
@@ -20,7 +20,7 @@ describe('NaturalDeduction', () => {
       const rules = nd.getRules()
       expect(rules.length).toBeGreaterThan(0)
       expect(rules[0]).toHaveProperty('id')
-      expect(rules[0]).toHaveProperty('name')
+      expect(rules[0]).toHaveProperty('nameKey')
       expect(rules[0]).toHaveProperty('category')
     })
   })

@@ -188,7 +188,7 @@ export default function ProofAssistantPage() {
       formula: premise,
       rule: 'Premise',
       dependencies: [],
-      justification: 'Given',
+      justification: t('given'),
       depth: 0,
     }))
 
@@ -218,7 +218,7 @@ export default function ProofAssistantPage() {
       const newStep = proofSystem.applyRule(rule, proofState, selectedSteps, userInput)
 
       if (!newStep) {
-        setErrorMessage('Could not apply this rule. Please check your selection.')
+        setErrorMessage(t('couldNotApplyRule'))
         return
       }
 
@@ -242,7 +242,7 @@ export default function ProofAssistantPage() {
       // Check if proof is complete
       if (proofSystem.validateProof(newState)) {
         newState.isComplete = true
-        setSuccessMessage('Proof complete! 🎉')
+        setSuccessMessage(t('proofCompleteMessage'))
         
         // 🎆 TRIGGER THE BIG BANG! 🎆
         setShowCelebration(true)
@@ -269,7 +269,7 @@ export default function ProofAssistantPage() {
       setErrorMessage(null)
     } catch (error) {
       console.error('Error applying rule:', error)
-      setErrorMessage('Error applying rule. Please try again.')
+      setErrorMessage(t('errorApplyingRule'))
     }
   }
 
@@ -285,7 +285,7 @@ export default function ProofAssistantPage() {
       formula: premise,
       rule: 'Premise',
       dependencies: [],
-      justification: 'Given',
+      justification: t('given'),
       depth: 0,
     }))
 
@@ -317,10 +317,10 @@ export default function ProofAssistantPage() {
     // Modus Ponens KB: select p and p→q, then apply MP
     if (selectedKB === 'modus-ponens') {
       if (proofState.steps.length === 2 && selectedSteps.length === 0) {
-        return 'Select both premises (click the checkboxes next to step 1 and step 2)'
+        return t('hintSelectBothPremises')
       }
       if (selectedSteps.length === 2) {
-        return 'Now click "Modus Ponens" in the Basic Rules section below'
+        return t('hintClickModusPonens')
       }
       if (proofState.steps.length > 2) {
         return null // They're done or making progress
@@ -330,49 +330,49 @@ export default function ProofAssistantPage() {
     // Conjunction KB: select p and q, then apply ∧I
     if (selectedKB === 'conjunction') {
       if (proofState.steps.length === 2 && selectedSteps.length === 0) {
-        return 'Select both premises (click the checkboxes next to step 1 and step 2)'
+        return t('hintSelectBothPremises')
       }
       if (selectedSteps.length === 2) {
-        return 'Now click "∧ Introduction" in the Introduction section below'
+        return t('hintClickAndIntro')
       }
     }
 
     // Conjunction Elimination KB: select p∧q, then apply ∧E
     if (selectedKB === 'elimination') {
       if (proofState.steps.length === 1 && selectedSteps.length === 0) {
-        return 'Select the premise (click the checkbox next to step 1)'
+        return t('hintSelectPremise')
       }
       if (selectedSteps.length === 1) {
         const goalIsP = proofState.goal === 'p'
         return goalIsP 
-          ? 'Now click "∧ Elimination (Left)" to extract p from p∧q' 
-          : 'Now click "∧ Elimination (Right)" to extract q from p∧q'
+          ? t('hintClickAndElimLeft')
+          : t('hintClickAndElimRight')
       }
     }
 
     // Disjunction KB: select p, then apply ∨I
     if (selectedKB === 'disjunction') {
       if (proofState.steps.length === 1 && selectedSteps.length === 0) {
-        return 'Select the premise (click the checkbox next to step 1)'
+        return t('hintSelectPremise')
       }
       if (selectedSteps.length === 1) {
-        return 'Now click "∨ Introduction (Left)" and enter "q" to create p∨q'
+        return t('hintClickOrIntro')
       }
     }
 
     // Hypothetical Syllogism: needs 2 MP applications
     if (selectedKB === 'syllogism' && proofState.goal === 'r') {
       if (proofState.steps.length === 3 && selectedSteps.length === 0) {
-        return 'First, select step 1 (p) and step 2 (p→q) to derive q'
+        return t('hintSelectForMP1')
       }
       if (proofState.steps.length === 3 && selectedSteps.length === 2) {
-        return 'Click "Modus Ponens" to derive q'
+        return t('hintClickMP')
       }
       if (proofState.steps.length === 4 && selectedSteps.length === 0) {
-        return 'Great! Now select step 4 (q) and step 3 (q→r) to derive r'
+        return t('hintSelectForMP2')
       }
       if (proofState.steps.length === 4 && selectedSteps.length === 2) {
-        return 'Click "Modus Ponens" again to derive r'
+        return t('hintClickMPAgain')
       }
     }
 
@@ -383,7 +383,7 @@ export default function ProofAssistantPage() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1, sm: 2 } }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 2, sm: 3 }, gap: { xs: 1, sm: 2 } }}>
-        <IconButton onClick={() => navigate('/')} aria-label="back">
+        <IconButton onClick={() => navigate('/')} aria-label={t('ariaBack')}>
           <ArrowBack />
         </IconButton>
         <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
@@ -391,7 +391,7 @@ export default function ProofAssistantPage() {
         </Typography>
         <IconButton
           onClick={handleNewProof}
-          aria-label="new proof"
+          aria-label={t('ariaNewProof')}
           color="primary"
           sx={{ ml: 'auto' }}
         >
@@ -430,7 +430,7 @@ export default function ProofAssistantPage() {
                   size="small"
                   onClick={() => setSelectedKB(kb.id)}
                 >
-                  {kb.name}
+                  {t(kb.nameKey)}
                 </Button>
               ))}
             </Box>
@@ -440,10 +440,10 @@ export default function ProofAssistantPage() {
           {knowledgeBases.find(kb => kb.id === selectedKB) && (
             <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'background.default' }}>
               <Typography variant="subtitle2" gutterBottom>
-                {knowledgeBases.find(kb => kb.id === selectedKB)?.name}
+                {t(knowledgeBases.find(kb => kb.id === selectedKB)!.nameKey)}
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                {knowledgeBases.find(kb => kb.id === selectedKB)?.description}
+                {t(knowledgeBases.find(kb => kb.id === selectedKB)!.descriptionKey)}
               </Typography>
               {knowledgeBases.find(kb => kb.id === selectedKB)!.premises.length > 0 && (
                 <Box sx={{ mt: 1 }}>
@@ -477,7 +477,7 @@ export default function ProofAssistantPage() {
                 }}
               >
                 <ListItemText
-                  primary={goal.label}
+                  primary={t(goal.labelKey)}
                   secondary={
                     <>
                       <Typography variant="body2" component="span" sx={{ fontFamily: 'monospace' }}>
@@ -485,7 +485,7 @@ export default function ProofAssistantPage() {
                       </Typography>
                       <br />
                       <Typography variant="caption" color="text.secondary">
-                        {goal.description}
+                        {t(goal.descriptionKey)}
                       </Typography>
                     </>
                   }

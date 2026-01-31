@@ -10,7 +10,8 @@ describe('FormulaInput', () => {
     
     const input = screen.getByRole('textbox') as HTMLInputElement
     expect(input).toBeInTheDocument()
-    expect(input.placeholder).toContain('Example')
+    // Placeholder can be in English or Portuguese depending on i18n
+    expect(input.placeholder).toMatch(/Example|Exemplo/i)
   })
 
   it('should render label', () => {

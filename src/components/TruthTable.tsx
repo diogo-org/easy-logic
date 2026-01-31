@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { TruthTableRow } from '../utils/truthTableGenerator'
 import './TruthTable.css'
 
@@ -10,6 +11,7 @@ interface TruthTableProps {
 const ROWS_PER_PAGE = 10
 
 export function TruthTable({ variables, rows }: TruthTableProps) {
+  const { t } = useTranslation()
   const [currentPage, setCurrentPage] = useState(0)
 
   const totalPages = Math.ceil(rows.length / ROWS_PER_PAGE)
@@ -28,7 +30,7 @@ export function TruthTable({ variables, rows }: TruthTableProps) {
   return (
     <div className="truth-table-container">
       <div className="truth-table-header">
-        <h2>Truth Table</h2>
+        <h2>{t('truthTable')}</h2>
       </div>
 
       <div className="truth-table-wrapper">
@@ -38,7 +40,7 @@ export function TruthTable({ variables, rows }: TruthTableProps) {
               {variables.map((variable) => (
                 <th key={variable}>{variable}</th>
               ))}
-              <th className="result-column">Result</th>
+              <th className="result-column">{t('result')}</th>
             </tr>
           </thead>
           <tbody>
@@ -66,17 +68,17 @@ export function TruthTable({ variables, rows }: TruthTableProps) {
           onClick={handlePrevious}
           disabled={currentPage === 0}
         >
-          Previous
+          {t('previous')}
         </button>
         <span className="pagination-info">
-          Page {currentPage + 1} of {totalPages}
+          {t('pageOf', { current: currentPage + 1, total: totalPages })}
         </span>
         <button
           className="pagination-button"
           onClick={handleNext}
           disabled={currentPage === totalPages - 1}
         >
-          Next
+          {t('next')}
         </button>
       </div>
     </div>

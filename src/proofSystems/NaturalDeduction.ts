@@ -11,94 +11,94 @@ export class NaturalDeduction implements ProofSystem {
   private knowledgeBases: KnowledgeBase[] = [
     {
       id: 'empty',
-      name: 'Empty',
-      description: 'No premises - prove using only logic',
+      nameKey: 'kbEmpty',
+      descriptionKey: 'kbEmptyDesc',
       premises: [],
       suggestedGoals: [
         {
-          label: 'Identity',
+          labelKey: 'goalIdentity',
           formula: 'p -> p',
-          description: 'Prove that anything implies itself',
+          descriptionKey: 'goalIdentityDesc',
         },
       ],
     },
     {
       id: 'modus-ponens',
-      name: 'Modus Ponens',
-      description: 'Given p and p→q, derive q',
+      nameKey: 'kbModusPonens',
+      descriptionKey: 'kbModusPonensDesc',
       premises: ['p', 'p -> q'],
       suggestedGoals: [
         {
-          label: 'Derive q',
+          labelKey: 'goalDeriveQ',
           formula: 'q',
-          description: 'Use Modus Ponens to get q',
+          descriptionKey: 'goalDeriveQDesc',
         },
       ],
     },
     {
       id: 'conjunction',
-      name: 'Conjunction',
-      description: 'Given two propositions',
+      nameKey: 'kbConjunction',
+      descriptionKey: 'kbConjunctionDesc',
       premises: ['p', 'q'],
       suggestedGoals: [
         {
-          label: 'Combine with AND',
+          labelKey: 'goalCombineAnd',
           formula: 'p ^ q',
-          description: 'Use ∧ Introduction',
+          descriptionKey: 'goalCombineAndDesc',
         },
         {
-          label: 'Commutative',
+          labelKey: 'goalCommutative',
           formula: 'q ^ p',
-          description: 'AND is commutative',
+          descriptionKey: 'goalCommutativeDesc',
         },
       ],
     },
     {
       id: 'disjunction',
-      name: 'Disjunction',
-      description: 'Given one proposition',
+      nameKey: 'kbDisjunction',
+      descriptionKey: 'kbDisjunctionDesc',
       premises: ['p'],
       suggestedGoals: [
         {
-          label: 'Add OR',
+          labelKey: 'goalAddOr',
           formula: 'p | q',
-          description: 'Use ∨ Introduction',
+          descriptionKey: 'goalAddOrDesc',
         },
       ],
     },
     {
       id: 'syllogism',
-      name: 'Hypothetical Syllogism',
-      description: 'Chain of implications',
+      nameKey: 'kbSyllogism',
+      descriptionKey: 'kbSyllogismDesc',
       premises: ['p', 'p -> q', 'q -> r'],
       suggestedGoals: [
         {
-          label: 'Derive r',
+          labelKey: 'goalDeriveR',
           formula: 'r',
-          description: 'Apply Modus Ponens twice',
+          descriptionKey: 'goalDeriveRDesc',
         },
         {
-          label: 'Direct implication',
+          labelKey: 'goalDirectImpl',
           formula: 'p -> r',
-          description: 'Prove transitivity',
+          descriptionKey: 'goalDirectImplDesc',
         },
       ],
     },
     {
       id: 'elimination',
-      name: 'Conjunction Elimination',
-      description: 'Given a conjunction',
+      nameKey: 'kbElimination',
+      descriptionKey: 'kbEliminationDesc',
       premises: ['p ^ q'],
       suggestedGoals: [
         {
-          label: 'Extract left',
+          labelKey: 'goalExtractLeft',
           formula: 'p',
-          description: 'Use ∧ Elimination (Left)',
+          descriptionKey: 'goalExtractLeftDesc',
         },
         {
-          label: 'Extract right',
+          labelKey: 'goalExtractRight',
           formula: 'q',
-          description: 'Use ∧ Elimination (Right)',
+          descriptionKey: 'goalExtractRightDesc',
         },
       ],
     },
@@ -107,71 +107,71 @@ export class NaturalDeduction implements ProofSystem {
   private rules: Rule[] = [
     {
       id: 'assume',
-      name: 'Assume',
-      description: 'Start an assumption (subproof)',
+      nameKey: 'ruleAssume',
+      descriptionKey: 'ruleAssumeDesc',
       category: 'assumption',
       requiredSteps: 0,
     },
     {
       id: 'mp',
-      name: 'Modus Ponens',
-      description: 'From P and P→Q, derive Q',
+      nameKey: 'ruleModusPonens',
+      descriptionKey: 'ruleModusPonensDesc',
       category: 'basic',
       requiredSteps: 2,
     },
     {
       id: 'mt',
-      name: 'Modus Tollens',
-      description: 'From P→Q and ¬Q, derive ¬P',
+      nameKey: 'ruleModusTollens',
+      descriptionKey: 'ruleModusTollensDesc',
       category: 'basic',
       requiredSteps: 2,
     },
     {
       id: 'and_intro',
-      name: '∧ Introduction',
-      description: 'From P and Q, derive P∧Q',
+      nameKey: 'ruleAndIntro',
+      descriptionKey: 'ruleAndIntroDesc',
       category: 'introduction',
       requiredSteps: 2,
     },
     {
       id: 'and_elim_left',
-      name: '∧ Elimination (Left)',
-      description: 'From P∧Q, derive P',
+      nameKey: 'ruleAndElimLeft',
+      descriptionKey: 'ruleAndElimLeftDesc',
       category: 'elimination',
       requiredSteps: 1,
     },
     {
       id: 'and_elim_right',
-      name: '∧ Elimination (Right)',
-      description: 'From P∧Q, derive Q',
+      nameKey: 'ruleAndElimRight',
+      descriptionKey: 'ruleAndElimRightDesc',
       category: 'elimination',
       requiredSteps: 1,
     },
     {
       id: 'or_intro_left',
-      name: '∨ Introduction (Left)',
-      description: 'From P, derive P∨Q',
+      nameKey: 'ruleOrIntroLeft',
+      descriptionKey: 'ruleOrIntroLeftDesc',
       category: 'introduction',
       requiredSteps: 1,
     },
     {
       id: 'or_intro_right',
-      name: '∨ Introduction (Right)',
-      description: 'From Q, derive P∨Q',
+      nameKey: 'ruleOrIntroRight',
+      descriptionKey: 'ruleOrIntroRightDesc',
       category: 'introduction',
       requiredSteps: 1,
     },
     {
       id: 'double_neg',
-      name: 'Double Negation',
-      description: 'From ¬¬P, derive P',
+      nameKey: 'ruleDoubleNeg',
+      descriptionKey: 'ruleDoubleNegDesc',
       category: 'basic',
       requiredSteps: 1,
     },
     {
       id: 'impl_intro',
-      name: '→ Introduction',
-      description: 'Close assumption: if you assumed P and derived Q, conclude P→Q',
+      nameKey: 'ruleImplIntro',
+      descriptionKey: 'ruleImplIntroDesc',
       category: 'introduction',
       requiredSteps: 1,
     },
@@ -450,13 +450,11 @@ export class NaturalDeduction implements ProofSystem {
     )
   }
 
-  getSuggestedGoals(): Array<{ label: string; formula: string; description: string }> {
+  getSuggestedGoals(): Array<{ labelKey: string; formula: string; descriptionKey: string }> {
     // Flatten all goals from all knowledge bases
     return this.knowledgeBases.flatMap(kb => 
       kb.suggestedGoals.map(goal => ({
         ...goal,
-        label: `${kb.name}: ${goal.label}`,
-        description: `${goal.description} (Premises: ${kb.premises.length ? kb.premises.join(', ') : 'none'})`,
       }))
     )
   }

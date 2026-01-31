@@ -66,10 +66,10 @@ export default function RuleSelector({ rules, onRuleSelect, disabled = false }: 
 
   // Group rules by category
   const categories = [
-    { id: 'assumption', label: 'Assumption' },
-    { id: 'basic', label: 'Basic Rules' },
-    { id: 'introduction', label: 'Introduction' },
-    { id: 'elimination', label: 'Elimination' },
+    { id: 'assumption', label: t('categoryAssumption') },
+    { id: 'basic', label: t('categoryBasic') },
+    { id: 'introduction', label: t('categoryIntroduction') },
+    { id: 'elimination', label: t('categoryElimination') },
   ]
 
   return (
@@ -99,7 +99,7 @@ export default function RuleSelector({ rules, onRuleSelect, disabled = false }: 
                 <Tooltip
                   key={rule.id}
                   title={
-                    rule.applicable ? rule.description : rule.reason || 'Not applicable'
+                    rule.applicable ? t(rule.descriptionKey) : rule.reason || t('notApplicable')
                   }
                   arrow
                 >
@@ -114,7 +114,7 @@ export default function RuleSelector({ rules, onRuleSelect, disabled = false }: 
                         opacity: rule.applicable ? 1 : 0.5,
                       }}
                     >
-                      {rule.name}
+                      {t(rule.nameKey)}
                     </Button>
                   </span>
                 </Tooltip>
@@ -126,20 +126,20 @@ export default function RuleSelector({ rules, onRuleSelect, disabled = false }: 
 
       {/* Dialog for rules that need input */}
       <Dialog open={dialogOpen} onClose={handleCancel} maxWidth="sm" fullWidth>
-        <DialogTitle>{selectedRule?.name}</DialogTitle>
+        <DialogTitle>{selectedRule ? t(selectedRule.nameKey) : ''}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            {selectedRule?.description}
+            {selectedRule ? t(selectedRule.descriptionKey) : ''}
           </Typography>
 
           <TextField
             autoFocus
             margin="dense"
-            label="Formula"
+            label={t('formula')}
             fullWidth
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
-            placeholder="Enter formula (e.g., p, q, p -> q)"
+            placeholder={t('formulaInputPlaceholder')}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && userInput.trim()) {
                 handleConfirm()
@@ -150,21 +150,21 @@ export default function RuleSelector({ rules, onRuleSelect, disabled = false }: 
 
           <Box sx={{ mt: 2 }}>
             <Typography variant="caption" color="text.secondary">
-              Syntax help:
+              {t('syntaxHelpLabel')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
-              <Chip label="~ (not)" size="small" />
-              <Chip label="^ (and)" size="small" />
-              <Chip label="| (or)" size="small" />
-              <Chip label="-> (implies)" size="small" />
-              <Chip label="<-> (iff)" size="small" />
+              <Chip label={t('notOperator')} size="small" />
+              <Chip label={t('andOperator')} size="small" />
+              <Chip label={t('orOperator')} size="small" />
+              <Chip label={t('impliesOperator')} size="small" />
+              <Chip label={t('iffOperator')} size="small" />
             </Box>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCancel}>Cancel</Button>
+          <Button onClick={handleCancel}>{t('cancel')}</Button>
           <Button onClick={handleConfirm} variant="contained" disabled={!userInput.trim()}>
-            Apply
+            {t('apply')}
           </Button>
         </DialogActions>
       </Dialog>

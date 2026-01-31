@@ -27,7 +27,7 @@ export function FormulaInput({ onSubmit }: FormulaInputProps) {
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyPress={handleKeyPress}
-        placeholder="Example: (p ^ q) -> r"
+        placeholder={t('formulaPlaceholder')}
         className="formula-input"
       />
       <div className="syntax-help">

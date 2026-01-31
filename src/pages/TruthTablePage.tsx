@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { InlineMath } from 'react-katex'
 import 'katex/dist/katex.min.css'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
@@ -7,6 +8,7 @@ import { generateTruthTable } from '../utils/truthTableGenerator'
 import { FormulaResult } from '../App'
 
 export function TruthTablePage() {
+  const { t } = useTranslation()
   const location = useLocation()
   const navigate = useNavigate()
   const state = location.state as { formula: FormulaResult } | null
@@ -15,7 +17,7 @@ export function TruthTablePage() {
     return (
       <div className="app-container">
         <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <p>Formula not found. Redirecting...</p>
+          <p>{t('formulaNotFound')}</p>
         </div>
       </div>
     )
@@ -33,14 +35,14 @@ export function TruthTablePage() {
         <button
           className="back-button"
           onClick={() => navigate('/')}
-          title="Back to home"
+          title={t('backToHome')}
         >
           <ArrowBackIcon sx={{ fontSize: '1.2rem' }} />
-          Back
+          {t('back')}
         </button>
 
         <div className="truth-table-page">
-          <h2 className="formula-title">Formula:</h2>
+          <h2 className="formula-title">{t('formulaLabel')}</h2>
           <div className="formula-display-large">
             <InlineMath math={latex} />
           </div>
@@ -59,14 +61,14 @@ export function TruthTablePage() {
         <button
           className="back-button"
           onClick={() => navigate('/')}
-          title="Back to home"
+          title={t('backToHome')}
         >
           <ArrowBackIcon sx={{ fontSize: '1.2rem' }} />
-          Back
+          {t('back')}
         </button>
 
         <div style={{ textAlign: 'center', padding: '2rem', color: '#ff6b6b' }}>
-          <p>Error generating truth table: {error instanceof Error ? error.message : 'Unknown error'}</p>
+          <p>{t('errorGeneratingTruthTable', { message: error instanceof Error ? error.message : t('unknownError') })}</p>
         </div>
       </div>
     )
