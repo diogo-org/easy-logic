@@ -24,8 +24,25 @@ function printStatus(passed, message) {
 
 console.log('🔍 Running pre-commit checks...\n');
 
-// Step 1: Run tests with coverage
-console.log('Step 1: Running tests with coverage...');
+// Step 1: Run ESLint
+console.log('Step 1: Running ESLint...');
+try {
+  execSync('npm run lint', { 
+    stdio: 'pipe',
+    encoding: 'utf-8'
+  });
+  printStatus(true, 'ESLint passed - no violations');
+} catch (error) {
+  printStatus(false, 'ESLint found violations');
+  console.log(error.stdout?.toString().slice(-2000) || '');
+  log(colors.yellow, '\n💡 Run "npm run lint:fix" to auto-fix some issues');
+  log(colors.red, '\n❌ Commit aborted: Fix all ESLint errors before committing');
+  process.exit(1);
+}
+console.log('');
+
+// Step 2: Run tests with coverage
+console.log('Step 2: Running tests with coverage...');
 try {
   const testOutput = execSync('npx vitest run --coverage', { 
     stdio: 'pipe',
@@ -53,8 +70,8 @@ try {
 }
 console.log('');
 
-// Step 2: Check code duplication
-console.log('Step 2: Checking code duplication...');
+// Step 3: Check code duplication
+console.log('Step 3: Checking code duplication...');
 try {
   // Run jscpd - it will exit with error code if threshold is exceeded
   execSync('npx jscpd src --reporters json --silent', { 
@@ -103,8 +120,8 @@ try {
 }
 console.log('');
 
-// Step 3: Check for hardcoded strings
-console.log('Step 3: Checking for hardcoded strings in JSX...');
+// Step 4: Check for hardcoded strings
+console.log('Step 4: Checking for hardcoded strings in JSX...');
 try {
   const srcDir = path.join(process.cwd(), 'src');
   const hardcodedStrings = [];
@@ -216,7 +233,7 @@ try {
   
   // Check translation file key consistency
   console.log('');
-  console.log('Step 3b: Checking translation file consistency...');
+  console.log('Step 4b: Checking translation file consistency...');
   
   const localesDir = path.join(srcDir, 'i18n', 'locales');
   const translationFiles = fs.readdirSync(localesDir).filter(f => f.endsWith('.json'));
@@ -273,8 +290,8 @@ try {
 }
 console.log('');
 
-// Step 4: Build check
-console.log('Step 4: Building project...');
+// Step 5: Build check
+console.log('Step 5: Building project...');
 try {
   const buildOutput = execSync('npm run build', { 
     stdio: 'pipe',

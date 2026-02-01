@@ -52,12 +52,13 @@ For non-React code (like `NaturalDeduction.ts`), use `nameKey`/`descriptionKey` 
 Translation files: `src/i18n/locales/en.json` and `pt-BR.json` - **must have identical keys**.
 
 ## Pre-Commit Quality Gates
-The hook (`.husky/pre-commit.cjs`) runs 4 checks - all must pass:
+The hook (`.husky/pre-commit.cjs`) runs 5 checks - all must pass:
 
-1. **Tests + Coverage** - `vitest --coverage` must pass with ≥80% statement coverage
-2. **Duplication** - ≤1% code duplication (jscpd)
-3. **Hardcoded Strings** - No untranslated text in JSX + translation file key sync check
-4. **Build** - `npm run build` must succeed
+1. **ESLint** - `npm run lint` must pass with no violations (includes `no-magic-numbers` and `i18next/no-literal-string` rules)
+2. **Tests + Coverage** - `vitest --coverage` must pass with ≥80% statement coverage
+3. **Duplication** - ≤1% code duplication (jscpd)
+4. **Hardcoded Strings** - No untranslated text in JSX + translation file key sync check
+5. **Build** - `npm run build` must succeed
 
 Run manually: `node .husky/pre-commit.cjs`
 

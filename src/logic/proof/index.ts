@@ -10,8 +10,12 @@ export type {
   ApplicableRule, 
   SuggestedGoal, 
   KnowledgeBase, 
-  ProofSystem 
+  ProofSystem,
+  RuleKey,
 } from './types'
+
+// Constants
+export { RULE_KEYS } from './types'
 
 // Natural Deduction proof system
 export { NaturalDeduction } from './NaturalDeduction'

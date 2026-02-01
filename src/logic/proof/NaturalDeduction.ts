@@ -4,8 +4,8 @@
  * This is pure business logic - no React or UI dependencies.
  */
 
-import { ProofSystem, Rule, ProofState, ProofStep, ApplicableRule, KnowledgeBase } from './types'
-import { tokenizeAndParse, Formula } from '../formula/common'
+import { ProofSystem, Rule, ProofState, ProofStep, ApplicableRule, KnowledgeBase, RULE_KEYS } from './types'
+import { tokenizeAndParse, Formula, FormulaType } from '../formula/common'
 
 export class NaturalDeduction implements ProofSystem {
   name = 'Natural Deduction'
@@ -217,7 +217,7 @@ export class NaturalDeduction implements ProofSystem {
       const hasDisjunction = state.steps.some(s => {
         try {
           const parsed = tokenizeAndParse(s.formula)
-          return parsed.type === 'or'
+          return parsed.type === FormulaType.OR
         } catch {
           return false
         }
@@ -312,9 +312,8 @@ export class NaturalDeduction implements ProofSystem {
             id: newId,
             lineNumber: this.computeLineNumber(state, true),
             formula: userInput,
-            rule: 'Assume',
+            ruleKey: RULE_KEYS.ASSUME,
             dependencies: [],
-            justification: 'Assumption',
             justificationKey: 'justificationAssumption',
             depth: state.currentDepth + 1,
             isSubproofStart: true,
@@ -333,9 +332,10 @@ export class NaturalDeduction implements ProofSystem {
             id: newId,
             lineNumber: this.computeLineNumber(state, false),
             formula: result,
-            rule: 'Modus Ponens',
+            ruleKey: RULE_KEYS.MODUS_PONENS,
             dependencies: selectedSteps,
-            justification: `MP (${step1.lineNumber}, ${step2.lineNumber})`,
+            justificationKey: 'justificationMP',
+            justificationParams: { step1: step1.lineNumber, step2: step2.lineNumber },
             depth: state.currentDepth,
           }
         }
@@ -353,9 +353,10 @@ export class NaturalDeduction implements ProofSystem {
             id: newId,
             lineNumber: this.computeLineNumber(state, false),
             formula: result,
-            rule: 'Modus Tollens',
+            ruleKey: RULE_KEYS.MODUS_TOLLENS,
             dependencies: selectedSteps,
-            justification: `MT (${step1.lineNumber}, ${step2.lineNumber})`,
+            justificationKey: 'justificationMT',
+            justificationParams: { step1: step1.lineNumber, step2: step2.lineNumber },
             depth: state.currentDepth,
           }
         }
@@ -369,9 +370,10 @@ export class NaturalDeduction implements ProofSystem {
             id: newId,
             lineNumber: this.computeLineNumber(state, false),
             formula: `(${step1.formula}) ^ (${step2.formula})`,
-            rule: '∧ Introduction',
+            ruleKey: RULE_KEYS.AND_INTRO,
             dependencies: selectedSteps,
-            justification: `∧I (${step1.lineNumber}, ${step2.lineNumber})`,
+            justificationKey: 'justificationAndIntro',
+            justificationParams: { step1: step1.lineNumber, step2: step2.lineNumber },
             depth: state.currentDepth,
           }
         }
@@ -381,15 +383,16 @@ export class NaturalDeduction implements ProofSystem {
           if (!step) return null
 
           const parsed = tokenizeAndParse(step.formula)
-          if (parsed.type !== 'and' || !parsed.left) return null
+          if (parsed.type !== FormulaType.AND || !parsed.left) return null
 
           return {
             id: newId,
             lineNumber: this.computeLineNumber(state, false),
             formula: this.formulaToString(parsed.left),
-            rule: '∧ Elimination',
+            ruleKey: RULE_KEYS.AND_ELIM_LEFT,
             dependencies: selectedSteps,
-            justification: `∧E-L (${step.lineNumber})`,
+            justificationKey: 'justificationAndElimLeft',
+            justificationParams: { step: step.lineNumber },
             depth: state.currentDepth,
           }
         }
@@ -399,15 +402,16 @@ export class NaturalDeduction implements ProofSystem {
           if (!step) return null
 
           const parsed = tokenizeAndParse(step.formula)
-          if (parsed.type !== 'and' || !parsed.right) return null
+          if (parsed.type !== FormulaType.AND || !parsed.right) return null
 
           return {
             id: newId,
             lineNumber: this.computeLineNumber(state, false),
             formula: this.formulaToString(parsed.right),
-            rule: '∧ Elimination',
+            ruleKey: RULE_KEYS.AND_ELIM_RIGHT,
             dependencies: selectedSteps,
-            justification: `∧E-R (${step.lineNumber})`,
+            justificationKey: 'justificationAndElimRight',
+            justificationParams: { step: step.lineNumber },
             depth: state.currentDepth,
           }
         }
@@ -420,9 +424,10 @@ export class NaturalDeduction implements ProofSystem {
             id: newId,
             lineNumber: this.computeLineNumber(state, false),
             formula: `(${step.formula}) | (${userInput})`,
-            rule: '∨ Introduction',
+            ruleKey: RULE_KEYS.OR_INTRO_LEFT,
             dependencies: selectedSteps,
-            justification: `∨I-L (${step.lineNumber})`,
+            justificationKey: 'justificationOrIntroLeft',
+            justificationParams: { step: step.lineNumber },
             depth: state.currentDepth,
           }
         }
@@ -435,9 +440,10 @@ export class NaturalDeduction implements ProofSystem {
             id: newId,
             lineNumber: this.computeLineNumber(state, false),
             formula: `(${userInput}) | (${step.formula})`,
-            rule: '∨ Introduction',
+            ruleKey: RULE_KEYS.OR_INTRO_RIGHT,
             dependencies: selectedSteps,
-            justification: `∨I-R (${step.lineNumber})`,
+            justificationKey: 'justificationOrIntroRight',
+            justificationParams: { step: step.lineNumber },
             depth: state.currentDepth,
           }
         }
@@ -447,16 +453,17 @@ export class NaturalDeduction implements ProofSystem {
           if (!step) return null
 
           const parsed = tokenizeAndParse(step.formula)
-          if (parsed.type !== 'not' || !parsed.left || parsed.left.type !== 'not' || !parsed.left.left)
+          if (parsed.type !== FormulaType.NOT || !parsed.left || parsed.left.type !== FormulaType.NOT || !parsed.left.left)
             return null
 
           return {
             id: newId,
             lineNumber: this.computeLineNumber(state, false),
             formula: this.formulaToString(parsed.left.left),
-            rule: 'Double Negation',
+            ruleKey: RULE_KEYS.DOUBLE_NEG,
             dependencies: selectedSteps,
-            justification: `DN (${step.lineNumber})`,
+            justificationKey: 'justificationDoubleNeg',
+            justificationParams: { step: step.lineNumber },
             depth: state.currentDepth,
           }
         }
@@ -466,7 +473,7 @@ export class NaturalDeduction implements ProofSystem {
           if (state.currentDepth === 0) return null
           
           // Find the assumption at current depth and the conclusion
-          const assumption = state.steps.find(s => s.depth === state.currentDepth && s.rule === 'Assume')
+          const assumption = state.steps.find(s => s.depth === state.currentDepth && s.ruleKey === RULE_KEYS.ASSUME)
           const conclusion = state.steps.length > 0 ? state.steps[state.steps.length - 1] : null
           
           if (!assumption || !conclusion || conclusion.depth !== state.currentDepth) return null
@@ -488,9 +495,10 @@ export class NaturalDeduction implements ProofSystem {
             id: newId,
             lineNumber,
             formula: `(${assumption.formula}) -> (${conclusion.formula})`,
-            rule: '→ Introduction',
+            ruleKey: RULE_KEYS.IMPL_INTRO,
             dependencies: [assumption.id, conclusion.id],
-            justification: `→I (${assumption.lineNumber}-${conclusion.lineNumber})`,
+            justificationKey: 'justificationImplIntro',
+            justificationParams: { start: assumption.lineNumber, end: conclusion.lineNumber },
             depth: state.currentDepth - 1,
             isSubproofEnd: true,
           }
@@ -503,7 +511,7 @@ export class NaturalDeduction implements ProofSystem {
           if (!step) return null
 
           const parsed = tokenizeAndParse(step.formula)
-          if (parsed.type !== 'or' || !parsed.left || !parsed.right) return null
+          if (parsed.type !== FormulaType.OR || !parsed.left || !parsed.right) return null
 
           const leftFormula = this.formulaToString(parsed.left)
           const rightFormula = this.formulaToString(parsed.right)
@@ -514,9 +522,10 @@ export class NaturalDeduction implements ProofSystem {
             id: newId,
             lineNumber: this.computeLineNumber(state, false),
             formula: `[${leftFormula}] | [${rightFormula}]`,
-            rule: '∨ Elimination',
+            ruleKey: RULE_KEYS.OR_ELIM,
             dependencies: selectedSteps,
-            justification: `∨E (${step.lineNumber})`,
+            justificationKey: 'justificationOrElim',
+            justificationParams: { step: step.lineNumber },
             depth: state.currentDepth,
           }
         }
@@ -537,7 +546,7 @@ export class NaturalDeduction implements ProofSystem {
   private parseImplication(formula: string): { antecedent: string; consequent: string } | null {
     try {
       const parsed = tokenizeAndParse(formula)
-      if (parsed.type !== 'implies') return null
+      if (parsed.type !== FormulaType.IMPLIES) return null
       return {
         antecedent: this.formulaToString(parsed.left!),
         consequent: this.formulaToString(parsed.right!),
@@ -565,7 +574,7 @@ export class NaturalDeduction implements ProofSystem {
     // Check if stepNegQ is ¬Q where Q is the consequent
     try {
       const parsedNegQ = tokenizeAndParse(stepNegQ.formula)
-      if (parsedNegQ.type !== 'not' || !parsedNegQ.left) return null
+      if (parsedNegQ.type !== FormulaType.NOT || !parsedNegQ.left) return null
 
       const negatedFormula = this.formulaToString(parsedNegQ.left)
       
@@ -581,21 +590,21 @@ export class NaturalDeduction implements ProofSystem {
 
   private formulaToString(formula: Formula): string {
     switch (formula.type) {
-      case 'var':
+      case FormulaType.VAR:
         return formula.value || ''
-      case 'true':
+      case FormulaType.TRUE:
         return 'T'
-      case 'false':
+      case FormulaType.FALSE:
         return 'F'
-      case 'not':
+      case FormulaType.NOT:
         return `~${this.formulaToString(formula.left!)}`
-      case 'and':
+      case FormulaType.AND:
         return `${this.formulaToString(formula.left!)} ^ ${this.formulaToString(formula.right!)}`
-      case 'or':
+      case FormulaType.OR:
         return `${this.formulaToString(formula.left!)} | ${this.formulaToString(formula.right!)}`
-      case 'implies':
+      case FormulaType.IMPLIES:
         return `${this.formulaToString(formula.left!)} -> ${this.formulaToString(formula.right!)}`
-      case 'iff':
+      case FormulaType.IFF:
         return `${this.formulaToString(formula.left!)} <-> ${this.formulaToString(formula.right!)}`
       default:
         return ''

@@ -167,5 +167,17 @@
   "leftBranch": "Ramo Esquerdo",
   "rightBranch": "Ramo Direito",
   "switchBranch": "Mudar para ramo",
-  "justificationAssumption": "Suposição"
+  "justificationAssumption": "Suposição",
+  "rulePremise": "Premissa",
+  "justificationMP": "MP ({{step1}}, {{step2}})",
+  "justificationMT": "MT ({{step1}}, {{step2}})",
+  "justificationAndIntro": "∧I ({{step1}}, {{step2}})",
+  "justificationAndElimLeft": "∧E-E ({{step}})",
+  "justificationAndElimRight": "∧E-D ({{step}})",
+  "justificationOrIntroLeft": "∨I-E ({{step}})",
+  "justificationOrIntroRight": "∨I-D ({{step}})",
+  "justificationDoubleNeg": "DN ({{step}})",
+  "justificationImplIntro": "→I ({{start}}-{{end}})",
+  "justificationOrElim": "∨E ({{step}})",
+  "justificationPremise": "Premissa"
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { NaturalDeduction } from './NaturalDeduction'
-import { ProofState } from './types'
+import { ProofState, RULE_KEYS } from './types'
 
 describe('NaturalDeduction', () => {
   const nd = new NaturalDeduction()
@@ -70,9 +70,9 @@ describe('NaturalDeduction', () => {
             id: 1,
             lineNumber: '1',
             formula: 'p',
-            rule: 'Assume',
+            ruleKey: RULE_KEYS.ASSUME,
             dependencies: [],
-            justification: 'Assumption',
+            justificationKey: 'justificationAssumption',
             depth: 1,
           },
         ],
@@ -106,7 +106,7 @@ describe('NaturalDeduction', () => {
 
       expect(result).not.toBeNull()
       expect(result?.formula).toBe('p')
-      expect(result?.rule).toBe('Assume')
+      expect(result?.ruleKey).toBe(RULE_KEYS.ASSUME)
       expect(result?.depth).toBe(1)
     })
 
@@ -119,18 +119,18 @@ describe('NaturalDeduction', () => {
             id: 1,
             lineNumber: '1',
             formula: 'p',
-            rule: 'Assume',
+            ruleKey: RULE_KEYS.ASSUME,
             dependencies: [],
-            justification: 'Assumption',
+            justificationKey: 'justificationAssumption',
             depth: 0,
           },
           {
             id: 2,
             lineNumber: '2',
             formula: 'q',
-            rule: 'Assume',
+            ruleKey: RULE_KEYS.ASSUME,
             dependencies: [],
-            justification: 'Assumption',
+            justificationKey: 'justificationAssumption',
             depth: 0,
           },
         ],
@@ -145,7 +145,7 @@ describe('NaturalDeduction', () => {
 
       expect(result).not.toBeNull()
       expect(result?.formula).toBe('(p) ^ (q)')
-      expect(result?.rule).toBe('∧ Introduction')
+      expect(result?.ruleKey).toBe(RULE_KEYS.AND_INTRO)
     })
 
     it('applies conjunction elimination left', () => {
@@ -157,9 +157,9 @@ describe('NaturalDeduction', () => {
             id: 1,
             lineNumber: '1',
             formula: 'p ^ q',
-            rule: 'Assume',
+            ruleKey: RULE_KEYS.ASSUME,
             dependencies: [],
-            justification: 'Assumption',
+            justificationKey: 'justificationAssumption',
             depth: 0,
           },
         ],
@@ -174,7 +174,7 @@ describe('NaturalDeduction', () => {
 
       expect(result).not.toBeNull()
       expect(result?.formula).toBe('p')
-      expect(result?.rule).toBe('∧ Elimination')
+      expect(result?.ruleKey).toBe(RULE_KEYS.AND_ELIM_LEFT)
     })
 
     it('applies modus ponens', () => {
@@ -186,18 +186,18 @@ describe('NaturalDeduction', () => {
             id: 1,
             lineNumber: '1',
             formula: 'p',
-            rule: 'Assume',
+            ruleKey: RULE_KEYS.ASSUME,
             dependencies: [],
-            justification: 'Assumption',
+            justificationKey: 'justificationAssumption',
             depth: 0,
           },
           {
             id: 2,
             lineNumber: '2',
             formula: 'p -> q',
-            rule: 'Assume',
+            ruleKey: RULE_KEYS.ASSUME,
             dependencies: [],
-            justification: 'Assumption',
+            justificationKey: 'justificationAssumption',
             depth: 0,
           },
         ],
@@ -212,7 +212,7 @@ describe('NaturalDeduction', () => {
 
       expect(result).not.toBeNull()
       expect(result?.formula).toBe('q')
-      expect(result?.rule).toBe('Modus Ponens')
+      expect(result?.ruleKey).toBe(RULE_KEYS.MODUS_PONENS)
     })
 
     it('applies double negation', () => {
@@ -224,9 +224,9 @@ describe('NaturalDeduction', () => {
             id: 1,
             lineNumber: '1',
             formula: '~~p',
-            rule: 'Assume',
+            ruleKey: RULE_KEYS.ASSUME,
             dependencies: [],
-            justification: 'Assumption',
+            justificationKey: 'justificationAssumption',
             depth: 0,
           },
         ],
@@ -241,7 +241,7 @@ describe('NaturalDeduction', () => {
 
       expect(result).not.toBeNull()
       expect(result?.formula).toBe('p')
-      expect(result?.rule).toBe('Double Negation')
+      expect(result?.ruleKey).toBe(RULE_KEYS.DOUBLE_NEG)
     })
 
     it('applies conjunction elimination right', () => {
@@ -253,9 +253,9 @@ describe('NaturalDeduction', () => {
             id: 1,
             lineNumber: '1',
             formula: 'p ^ q',
-            rule: 'Assume',
+            ruleKey: RULE_KEYS.ASSUME,
             dependencies: [],
-            justification: 'Assumption',
+            justificationKey: 'justificationAssumption',
             depth: 0,
           },
         ],
@@ -270,7 +270,7 @@ describe('NaturalDeduction', () => {
 
       expect(result).not.toBeNull()
       expect(result?.formula).toBe('q')
-      expect(result?.rule).toBe('∧ Elimination')
+      expect(result?.ruleKey).toBe(RULE_KEYS.AND_ELIM_RIGHT)
     })
 
     it('applies disjunction introduction left', () => {
@@ -282,9 +282,9 @@ describe('NaturalDeduction', () => {
             id: 1,
             lineNumber: '1',
             formula: 'p',
-            rule: 'Assume',
+            ruleKey: RULE_KEYS.ASSUME,
             dependencies: [],
-            justification: 'Assumption',
+            justificationKey: 'justificationAssumption',
             depth: 0,
           },
         ],
@@ -299,7 +299,7 @@ describe('NaturalDeduction', () => {
 
       expect(result).not.toBeNull()
       expect(result?.formula).toBe('(p) | (q)')
-      expect(result?.rule).toBe('∨ Introduction')
+      expect(result?.ruleKey).toBe(RULE_KEYS.OR_INTRO_LEFT)
     })
 
     it('applies disjunction introduction right', () => {
@@ -311,9 +311,9 @@ describe('NaturalDeduction', () => {
             id: 1,
             lineNumber: '1',
             formula: 'p',
-            rule: 'Assume',
+            ruleKey: RULE_KEYS.ASSUME,
             dependencies: [],
-            justification: 'Assumption',
+            justificationKey: 'justificationAssumption',
             depth: 0,
           },
         ],
@@ -328,7 +328,7 @@ describe('NaturalDeduction', () => {
 
       expect(result).not.toBeNull()
       expect(result?.formula).toBe('(q) | (p)')
-      expect(result?.rule).toBe('∨ Introduction')
+      expect(result?.ruleKey).toBe(RULE_KEYS.OR_INTRO_RIGHT)
     })
 
     it('applies implication introduction', () => {
@@ -340,9 +340,9 @@ describe('NaturalDeduction', () => {
             id: 1,
             lineNumber: '1',
             formula: 'p',
-            rule: 'Assume',
+            ruleKey: RULE_KEYS.ASSUME,
             dependencies: [],
-            justification: 'Assumption',
+            justificationKey: 'justificationAssumption',
             depth: 1,
             isSubproofStart: true,
           },
@@ -358,7 +358,7 @@ describe('NaturalDeduction', () => {
 
       expect(result).not.toBeNull()
       expect(result?.formula).toBe('(p) -> (p)')
-      expect(result?.rule).toBe('→ Introduction')
+      expect(result?.ruleKey).toBe(RULE_KEYS.IMPL_INTRO)
       expect(result?.depth).toBe(0)
       expect(result?.isSubproofEnd).toBe(true)
     })
@@ -372,18 +372,18 @@ describe('NaturalDeduction', () => {
             id: 1,
             lineNumber: '1',
             formula: 'p -> q',
-            rule: 'Premise',
+            ruleKey: RULE_KEYS.PREMISE,
             dependencies: [],
-            justification: 'Given',
+            justificationKey: 'justificationPremise',
             depth: 0,
           },
           {
             id: 2,
             lineNumber: '2',
             formula: '~q',
-            rule: 'Premise',
+            ruleKey: RULE_KEYS.PREMISE,
             dependencies: [],
-            justification: 'Given',
+            justificationKey: 'justificationPremise',
             depth: 0,
           },
         ],
@@ -399,7 +399,7 @@ describe('NaturalDeduction', () => {
       expect(result).not.toBeNull()
       expect(result?.formula).toContain('~')
       expect(result?.formula).toContain('p')
-      expect(result?.rule).toBe('Modus Tollens')
+      expect(result?.ruleKey).toBe(RULE_KEYS.MODUS_TOLLENS)
     })
   })
 
@@ -427,9 +427,9 @@ describe('NaturalDeduction', () => {
             id: 1,
             lineNumber: '1',
             formula: 'p',
-            rule: 'Assume',
+            ruleKey: RULE_KEYS.ASSUME,
             dependencies: [],
-            justification: 'Assumption',
+            justificationKey: 'justificationAssumption',
             depth: 1,
           },
         ],
@@ -451,18 +451,19 @@ describe('NaturalDeduction', () => {
             id: 1,
             lineNumber: '1',
             formula: 'p',
-            rule: 'Assume',
+            ruleKey: RULE_KEYS.ASSUME,
             dependencies: [],
-            justification: 'Assumption',
+            justificationKey: 'justificationAssumption',
             depth: 1,
           },
           {
             id: 2,
             lineNumber: '2',
             formula: 'p -> p',
-            rule: '→ Introduction',
+            ruleKey: RULE_KEYS.IMPL_INTRO,
             dependencies: [1],
-            justification: '→I (1-1)',
+            justificationKey: 'justificationImplIntro',
+            justificationParams: { start: '1', end: '1' },
             depth: 0,
           },
         ],
@@ -498,9 +499,9 @@ describe('NaturalDeduction', () => {
         id: idx + 1,
         lineNumber: String(idx + 1),
         formula: premise,
-        rule: 'Premise' as const,
+        ruleKey: RULE_KEYS.PREMISE,
         dependencies: [] as number[],
-        justification: 'Given',
+        justificationKey: 'justificationPremise',
         depth: 0,
       }))
 
@@ -540,9 +541,9 @@ describe('NaturalDeduction', () => {
         id: idx + 1,
         lineNumber: String(idx + 1),
         formula: premise,
-        rule: 'Premise' as const,
+        ruleKey: RULE_KEYS.PREMISE,
         dependencies: [] as number[],
-        justification: 'Given',
+        justificationKey: 'justificationPremise',
         depth: 0,
       }))
 
@@ -580,9 +581,9 @@ describe('NaturalDeduction', () => {
         id: idx + 1,
         lineNumber: String(idx + 1),
         formula: premise,
-        rule: 'Premise' as const,
+        ruleKey: RULE_KEYS.PREMISE,
         dependencies: [] as number[],
-        justification: 'Given',
+        justificationKey: 'justificationPremise',
         depth: 0,
       }))
 
@@ -623,7 +624,7 @@ describe('NaturalDeduction', () => {
         goal: 'r',
         premises: ['p'],
         steps: [
-          { id: 1, lineNumber: '1', formula: 'p', rule: 'Premise', dependencies: [], justification: 'Given', depth: 0 },
+          { id: 1, lineNumber: '1', formula: 'p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
         ],
         currentDepth: 0,
         currentSubproofId: '',
@@ -643,7 +644,7 @@ describe('NaturalDeduction', () => {
         goal: 'r',
         premises: ['p | q'],
         steps: [
-          { id: 1, lineNumber: '1', formula: 'p | q', rule: 'Premise', dependencies: [], justification: 'Given', depth: 0 },
+          { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
         ],
         currentDepth: 0,
         currentSubproofId: '',
@@ -662,7 +663,7 @@ describe('NaturalDeduction', () => {
         goal: 'r',
         premises: ['p | q'],
         steps: [
-          { id: 1, lineNumber: '1', formula: 'p | q', rule: 'Premise', dependencies: [], justification: 'Given', depth: 0 },
+          { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
         ],
         currentDepth: 0,
         currentSubproofId: '',
@@ -674,7 +675,7 @@ describe('NaturalDeduction', () => {
       const result = nd.applyRule(orElimRule, state, [1])
 
       expect(result).not.toBeNull()
-      expect(result?.rule).toBe('∨ Elimination')
+      expect(result?.ruleKey).toBe(RULE_KEYS.OR_ELIM)
       expect(result?.formula).toContain('p')
       expect(result?.formula).toContain('q')
     })
@@ -684,7 +685,7 @@ describe('NaturalDeduction', () => {
         goal: 'r',
         premises: ['p | q'],
         steps: [
-          { id: 1, lineNumber: '1', formula: 'p | q', rule: 'Premise', dependencies: [], justification: 'Given', depth: 0 },
+          { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
         ],
         currentDepth: 0,
         currentSubproofId: '',
@@ -703,7 +704,7 @@ describe('NaturalDeduction', () => {
         goal: 'r',
         premises: ['p'],
         steps: [
-          { id: 1, lineNumber: '1', formula: 'p', rule: 'Premise', dependencies: [], justification: 'Given', depth: 0 },
+          { id: 1, lineNumber: '1', formula: 'p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
         ],
         currentDepth: 0,
         currentSubproofId: '',

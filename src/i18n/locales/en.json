@@ -169,5 +169,17 @@
   "leftBranch": "Left Branch",
   "rightBranch": "Right Branch",
   "switchBranch": "Switch to branch",
-  "justificationAssumption": "Assumption"
+  "justificationAssumption": "Assumption",
+  "rulePremise": "Premise",
+  "justificationMP": "MP ({{step1}}, {{step2}})",
+  "justificationMT": "MT ({{step1}}, {{step2}})",
+  "justificationAndIntro": "∧I ({{step1}}, {{step2}})",
+  "justificationAndElimLeft": "∧E-L ({{step}})",
+  "justificationAndElimRight": "∧E-R ({{step}})",
+  "justificationOrIntroLeft": "∨I-L ({{step}})",
+  "justificationOrIntroRight": "∨I-R ({{step}})",
+  "justificationDoubleNeg": "DN ({{step}})",
+  "justificationImplIntro": "→I ({{start}}-{{end}})",
+  "justificationOrElim": "∨E ({{step}})",
+  "justificationPremise": "Premise"
 }

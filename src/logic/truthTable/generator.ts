@@ -4,17 +4,17 @@
  * This is pure business logic - no React or UI dependencies.
  */
 
-import { tokenizeAndParse, Formula } from '../formula/common'
+import { tokenizeAndParse, Formula, FormulaType } from '../formula/common'
 
 function getVariables(formula: Formula): Set<string> {
   const vars = new Set<string>()
 
   function traverse(f: Formula) {
-    if (f.type === 'var') {
+    if (f.type === FormulaType.VAR) {
       vars.add(f.value!)
-    } else if (f.type === 'not' && f.left) {
+    } else if (f.type === FormulaType.NOT && f.left) {
       traverse(f.left)
-    } else if ((f.type === 'and' || f.type === 'or' || f.type === 'implies' || f.type === 'iff') && f.left && f.right) {
+    } else if ((f.type === FormulaType.AND || f.type === FormulaType.OR || f.type === FormulaType.IMPLIES || f.type === FormulaType.IFF) && f.left && f.right) {
       traverse(f.left)
       traverse(f.right)
     }
@@ -26,28 +26,28 @@ function getVariables(formula: Formula): Set<string> {
 
 export function evaluateFormula(formula: Formula, assignment: Record<string, boolean>): boolean {
   switch (formula.type) {
-    case 'var':
+    case FormulaType.VAR:
       return assignment[formula.value!] ?? false
 
-    case 'true':
+    case FormulaType.TRUE:
       return true
 
-    case 'false':
+    case FormulaType.FALSE:
       return false
 
-    case 'not':
+    case FormulaType.NOT:
       return !evaluateFormula(formula.left!, assignment)
 
-    case 'and':
+    case FormulaType.AND:
       return evaluateFormula(formula.left!, assignment) && evaluateFormula(formula.right!, assignment)
 
-    case 'or':
+    case FormulaType.OR:
       return evaluateFormula(formula.left!, assignment) || evaluateFormula(formula.right!, assignment)
 
-    case 'implies':
+    case FormulaType.IMPLIES:
       return !evaluateFormula(formula.left!, assignment) || evaluateFormula(formula.right!, assignment)
 
-    case 'iff':
+    case FormulaType.IFF:
       return evaluateFormula(formula.left!, assignment) === evaluateFormula(formula.right!, assignment)
 
     default:

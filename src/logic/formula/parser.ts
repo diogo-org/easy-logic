@@ -14,32 +14,32 @@
  * p, proposition, etc : variables
  */
 
-import { tokenizeAndParse, Formula } from './common'
+import { tokenizeAndParse, Formula, FormulaType } from './common'
 
 export function formulaToLatex(formula: Formula): string {
   switch (formula.type) {
-    case 'var':
+    case FormulaType.VAR:
       return formula.value!
 
-    case 'true':
+    case FormulaType.TRUE:
       return '\\top'
 
-    case 'false':
+    case FormulaType.FALSE:
       return '\\bot'
 
-    case 'not':
+    case FormulaType.NOT:
       return `\\neg ${formulaToLatex(formula.left!)}`
 
-    case 'and':
+    case FormulaType.AND:
       return `${formulaToLatex(formula.left!)} \\land ${formulaToLatex(formula.right!)}`
 
-    case 'or':
+    case FormulaType.OR:
       return `${formulaToLatex(formula.left!)} \\lor ${formulaToLatex(formula.right!)}`
 
-    case 'implies':
+    case FormulaType.IMPLIES:
       return `${formulaToLatex(formula.left!)} \\to ${formulaToLatex(formula.right!)}`
 
-    case 'iff':
+    case FormulaType.IFF:
       return `${formulaToLatex(formula.left!)} \\leftrightarrow ${formulaToLatex(formula.right!)}`
 
     default:

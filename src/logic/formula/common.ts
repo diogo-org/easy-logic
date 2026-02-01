@@ -4,13 +4,48 @@
  * This is pure business logic - no React or UI dependencies.
  */
 
+// Operator string lengths
+const TWO_CHAR_OPERATOR_LENGTH = 2
+const THREE_CHAR_OPERATOR_LENGTH = 3
+
+/** Enum for formula node types */
+export const FormulaType = {
+  VAR: 'var',
+  TRUE: 'true',
+  FALSE: 'false',
+  NOT: 'not',
+  AND: 'and',
+  OR: 'or',
+  IMPLIES: 'implies',
+  IFF: 'iff',
+} as const
+
+export type FormulaTypeValue = typeof FormulaType[keyof typeof FormulaType]
+
+/** Enum for token types */
+export const TokenType = {
+  LPAREN: 'LPAREN',
+  RPAREN: 'RPAREN',
+  AND: 'AND',
+  OR: 'OR',
+  IMPLIES: 'IMPLIES',
+  IFF: 'IFF',
+  NOT: 'NOT',
+  VAR: 'VAR',
+  TRUE: 'TRUE',
+  FALSE: 'FALSE',
+  EOF: 'EOF',
+} as const
+
+export type TokenTypeValue = typeof TokenType[keyof typeof TokenType]
+
 export type Token = {
-  type: 'LPAREN' | 'RPAREN' | 'AND' | 'OR' | 'IMPLIES' | 'IFF' | 'NOT' | 'VAR' | 'TRUE' | 'FALSE' | 'EOF'
+  type: TokenTypeValue
   value: string
 }
 
 export type Formula = {
-  type: 'var' | 'true' | 'false' | 'not' | 'and' | 'or' | 'implies' | 'iff'
+  type: FormulaTypeValue
   value?: string
   left?: Formula
   right?: Formula
@@ -36,8 +71,8 @@ export class Tokenizer {
   }
 
   private peekThree(): string | null {
-    if (this.pos + 2 >= this.input.length) return null
-    return this.input.substring(this.pos, this.pos + 3)
+    if (this.pos + TWO_CHAR_OPERATOR_LENGTH >= this.input.length) return null
+    return this.input.substring(this.pos, this.pos + THREE_CHAR_OPERATOR_LENGTH)
   }
 
   private advance(): void {
@@ -54,7 +89,7 @@ export class Tokenizer {
     this.skipWhitespace()
 
     if (this.pos >= this.input.length) {
-      return { type: 'EOF', value: '' }
+      return { type: TokenType.EOF, value: '' }
     }
 
     const ch = this.peek()!
@@ -64,64 +99,64 @@ export class Tokenizer {
     // Check for three-character operators first
     if (three === '<->') {
       this.pos += 3
-      return { type: 'IFF', value: '<->' }
+      return { type: TokenType.IFF, value: '<->' }
     }
 
     // Check for two-character operators
     if (two === '->') {
       this.pos += 2
-      return { type: 'IMPLIES', value: '->' }
+      return { type: TokenType.IMPLIES, value: '->' }
     }
 
     // Alternative symbols for operators
     if (two === '/\\' || two === '&&') {
       this.pos += 2
-      return { type: 'AND', value: two }
+      return { type: TokenType.AND, value: two }
     }
 
     if (two === '\\/' || two === '||') {
       this.pos += 2
-      return { type: 'OR', value: two }
+      return { type: TokenType.OR, value: two }
     }
 
     // Single character tokens
     switch (ch) {
       case '(':
         this.advance()
-        return { type: 'LPAREN', value: '(' }
+        return { type: TokenType.LPAREN, value: '(' }
       case ')':
         this.advance()
-        return { type: 'RPAREN', value: ')' }
+        return { type: TokenType.RPAREN, value: ')' }
       case '^':
       case '∧':
         this.advance()
-        return { type: 'AND', value: ch }
+        return { type: TokenType.AND, value: ch }
       case '|':
       case '∨':
         this.advance()
-        return { type: 'OR', value: ch }
+        return { type: TokenType.OR, value: ch }
       case '~':
       case '¬':
       case '!':
         this.advance()
-        return { type: 'NOT', value: ch }
+        return { type: TokenType.NOT, value: ch }
       case '→':
         this.advance()
-        return { type: 'IMPLIES', value: '→' }
+        return { type: TokenType.IMPLIES, value: '→' }
       case '↔':
         this.advance()
-        return { type: 'IFF', value: '↔' }
+        return { type: TokenType.IFF, value: '↔' }
     }
 
     // Check for TRUE/FALSE constants
     if (ch === 'T' || ch === '⊤') {
       this.advance()
-      return { type: 'TRUE', value: ch }
+      return { type: TokenType.TRUE, value: ch }
     }
 
     if (ch === 'F' || ch === '⊥') {
       this.advance()
-      return { type: 'FALSE', value: ch }
+      return { type: TokenType.FALSE, value: ch }
     }
 
     // Variables (single letters or multi-character identifiers)
@@ -131,7 +166,7 @@ export class Tokenizer {
         value += this.peek()
         this.advance()
       }
-      return { type: 'VAR', value }
+      return { type: TokenType.VAR, value }
     }
 
     throw new Error(`Unexpected character: ${ch}`)
@@ -140,7 +175,7 @@ export class Tokenizer {
   tokenize(): Token[] {
     const tokens: Token[] = []
     let token = this.nextToken()
-    while (token.type !== 'EOF') {
+    while (token.type !== TokenType.EOF) {
       tokens.push(token)
       token = this.nextToken()
     }
@@ -187,7 +222,7 @@ export class Parser {
 
   parse(): Formula {
     const result = this.parseIff()
-    if (this.peek().type !== 'EOF') {
+    if (this.peek().type !== TokenType.EOF) {
       throw new Error(`Unexpected token: ${this.peek().value}`)
     }
     return result
@@ -195,50 +230,50 @@ export class Parser {
 
   private parseIff(): Formula {
     let left = this.parseImplies()
-    while (this.peek().type === 'IFF') {
+    while (this.peek().type === TokenType.IFF) {
       this.advance()
       const right = this.parseImplies()
-      left = { type: 'iff', left, right }
+      left = { type: FormulaType.IFF, left, right }
     }
     return left
   }
 
   private parseImplies(): Formula {
-    let left = this.parseOr()
+    const left = this.parseOr()
     // Right-associative
-    if (this.peek().type === 'IMPLIES') {
+    if (this.peek().type === TokenType.IMPLIES) {
       this.advance()
       const right = this.parseImplies()
-      return { type: 'implies', left, right }
+      return { type: FormulaType.IMPLIES, left, right }
     }
     return left
   }
 
   private parseOr(): Formula {
     let left = this.parseAnd()
-    while (this.peek().type === 'OR') {
+    while (this.peek().type === TokenType.OR) {
       this.advance()
       const right = this.parseAnd()
-      left = { type: 'or', left, right }
+      left = { type: FormulaType.OR, left, right }
     }
     return left
   }
 
   private parseAnd(): Formula {
     let left = this.parseNot()
-    while (this.peek().type === 'AND') {
+    while (this.peek().type === TokenType.AND) {
       this.advance()
       const right = this.parseNot()
-      left = { type: 'and', left, right }
+      left = { type: FormulaType.AND, left, right }
     }
     return left
   }
 
   private parseNot(): Formula {
-    if (this.peek().type === 'NOT') {
+    if (this.peek().type === TokenType.NOT) {
       this.advance()
       const operand = this.parseNot()
-      return { type: 'not', left: operand }
+      return { type: FormulaType.NOT, left: operand }
     }
     return this.parseAtom()
   }
@@ -246,25 +281,25 @@ export class Parser {
   private parseAtom(): Formula {
     const token = this.peek()
 
-    if (token.type === 'VAR') {
+    if (token.type === TokenType.VAR) {
       this.advance()
-      return { type: 'var', value: token.value }
+      return { type: FormulaType.VAR, value: token.value }
     }
 
-    if (token.type === 'TRUE') {
+    if (token.type === TokenType.TRUE) {
       this.advance()
-      return { type: 'true' }
+      return { type: FormulaType.TRUE }
     }
 
-    if (token.type === 'FALSE') {
+    if (token.type === TokenType.FALSE) {
       this.advance()
-      return { type: 'false' }
+      return { type: FormulaType.FALSE }
     }
 
-    if (token.type === 'LPAREN') {
+    if (token.type === TokenType.LPAREN) {
       this.advance()
       const expr = this.parseIff()
-      if (!this.match('RPAREN')) {
+      if (!this.match(TokenType.RPAREN)) {
         throw new Error('Expected closing parenthesis')
       }
       return expr
@@ -291,7 +326,7 @@ export function extractVariables(formula: Formula): string[] {
   const vars = new Set<string>()
 
   function traverse(f: Formula) {
-    if (f.type === 'var' && f.value) {
+    if (f.type === FormulaType.VAR && f.value) {
       vars.add(f.value)
     }
     if (f.left) traverse(f.left)

@@ -5,9 +5,10 @@
 import { Box, Paper, Typography, Checkbox, IconButton, Tooltip } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import { useTranslation } from 'react-i18next'
-import { ProofStep as ProofStepType } from '../logic/proof'
+import { ProofStep as ProofStepType, RULE_KEYS } from '../logic/proof'
 import { FormulaDisplay } from './FormulaDisplay'
 import { parseFormula } from '../logic/formula'
+import { LAYOUT, OPACITY } from '../constants/ui'
 
 interface ProofStepProps {
   step: ProofStepType
@@ -27,9 +28,9 @@ export default function ProofStep({
   canDelete = false,
 }: ProofStepProps) {
   const { t } = useTranslation()
-  const indentation = step.depth * 16 // 16px per depth level (reduced from 24)
-  const isPremise = step.rule === 'Premise'
-  const isBranchStart = step.rule === '∨ Elimination'
+  const indentation = step.depth * LAYOUT.DEPTH_INDENT_PX
+  const isPremise = step.ruleKey === RULE_KEYS.PREMISE
+  const isBranchStart = step.ruleKey === RULE_KEYS.OR_ELIM
   
   // Convert formula to LaTeX for proper rendering
   const { latex, error } = parseFormula(step.formula)
@@ -40,7 +41,7 @@ export default function ProofStep({
       sx={{
         p: { xs: 1, sm: 2 },
         mb: 1,
-        ml: { xs: `${indentation * 0.5}px`, sm: `${indentation}px` },
+        ml: { xs: `${indentation * OPACITY.HALF}px`, sm: `${indentation}px` },
         display: 'flex',
         alignItems: 'center',
         gap: { xs: 1, sm: 2 },
@@ -84,17 +85,17 @@ export default function ProofStep({
 
       <Box sx={{ 
         textAlign: 'right', 
-        minWidth: { xs: 'auto', sm: 120 },
+        minWidth: { xs: 'auto', sm: LAYOUT.RULE_BUTTON_MIN_WIDTH },
         width: { xs: '100%', sm: 'auto' },
-        mt: { xs: 0.5, sm: 0 },
-        pl: { xs: isSelectable ? 4 : 0, sm: 0 },
+        mt: { xs: OPACITY.HALF, sm: 0 },
+        pl: { xs: isSelectable ? LAYOUT.SMALL_SPACING_PX : 0, sm: 0 },
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'flex-end',
         gap: 1,
       }}>
         <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
-          {step.justificationKey ? t(step.justificationKey, step.justificationParams) : step.justification}
+          {t(step.justificationKey, step.justificationParams)}
         </Typography>
         {canDelete && onDelete && (
           <Tooltip title={t('deleteStep')}>

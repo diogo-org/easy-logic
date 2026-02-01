@@ -4,14 +4,31 @@
  * This is pure business logic - no React or UI dependencies.
  */
 
+/** Constants for rule keys - use these for type-safe comparisons */
+export const RULE_KEYS = {
+  ASSUME: 'ruleAssume',
+  MODUS_PONENS: 'ruleModusPonens',
+  MODUS_TOLLENS: 'ruleModusTollens',
+  AND_INTRO: 'ruleAndIntro',
+  AND_ELIM_LEFT: 'ruleAndElimLeft',
+  AND_ELIM_RIGHT: 'ruleAndElimRight',
+  OR_INTRO_LEFT: 'ruleOrIntroLeft',
+  OR_INTRO_RIGHT: 'ruleOrIntroRight',
+  DOUBLE_NEG: 'ruleDoubleNeg',
+  IMPL_INTRO: 'ruleImplIntro',
+  OR_ELIM: 'ruleOrElim',
+  PREMISE: 'rulePremise',
+} as const
+
+export type RuleKey = typeof RULE_KEYS[keyof typeof RULE_KEYS]
+
 export interface ProofStep {
   id: number // Sequential ID for internal tracking
   lineNumber: string // Fitch-style display number (e.g., "1", "2.1", "2.2.1")
   formula: string
-  rule: string
+  ruleKey: RuleKey // Translation key for the rule name
   dependencies: number[] // IDs of steps this depends on
-  justification: string // For display - can be translation key or formatted string
-  justificationKey?: string // Translation key (if provided, justification is used as fallback)
+  justificationKey: string // Translation key for justification
   justificationParams?: Record<string, string | number> // Parameters for translation interpolation
   depth: number // For nested subproofs (0 = main, 1 = first subproof, etc.)
   subproofId?: string // Which subproof this step belongs to (e.g., "2", "2.1")

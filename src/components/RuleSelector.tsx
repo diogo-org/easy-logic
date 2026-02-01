@@ -19,6 +19,7 @@ import {
 } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { ApplicableRule } from '../logic/proof'
+import { LAYOUT, OPACITY } from '../constants/ui'
 
 interface RuleSelectorProps {
   rules: ApplicableRule[]
@@ -110,8 +111,8 @@ export default function RuleSelector({ rules, onRuleSelect, disabled = false }: 
                       disabled={!rule.applicable || disabled}
                       onClick={() => handleRuleClick(rule)}
                       sx={{
-                        minWidth: isSmallScreen ? 'auto' : '120px',
-                        opacity: rule.applicable ? 1 : 0.5,
+                        minWidth: isSmallScreen ? 'auto' : `${LAYOUT.RULE_BUTTON_MIN_WIDTH}px`,
+                        opacity: rule.applicable ? 1 : OPACITY.HALF,
                       }}
                     >
                       {t(rule.nameKey)}

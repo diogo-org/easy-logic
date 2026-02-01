@@ -1,16 +1,16 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import ProofStep from './ProofStep'
-import { ProofStep as ProofStepType } from '../logic/proof'
+import { ProofStep as ProofStepType, RULE_KEYS } from '../logic/proof'
 
 describe('ProofStep', () => {
   const mockStep: ProofStepType = {
     id: 1,
     lineNumber: '1',
     formula: 'p',
-    rule: 'Assume',
+    ruleKey: RULE_KEYS.ASSUME,
     dependencies: [],
-    justification: 'Assumption',
+    justificationKey: 'justificationAssumption',
     depth: 0,
   }
 
@@ -107,7 +107,7 @@ describe('ProofStep', () => {
   it('renders branch start step', () => {
     const branchStep: ProofStepType = { 
       ...mockStep, 
-      rule: '∨ Elimination'
+      ruleKey: RULE_KEYS.OR_ELIM,
     }
     render(
       <ProofStep

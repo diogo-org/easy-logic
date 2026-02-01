@@ -26,6 +26,7 @@ import {
   Backdrop,
 } from '@mui/material'
 import { ArrowBack, Refresh, HelpOutline, Celebration, Star, AutoAwesome } from '@mui/icons-material'
+import { CELEBRATION, ANIMATION_MS, PROOF_HINT_STEPS } from '../constants/ui'
 
 // 🎆 EPIC CELEBRATION ANIMATIONS 🎆
 
@@ -95,7 +96,7 @@ const confettiColors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '
 const shapes = ['●', '■', '▲', '★', '♦', '♥', '✦', '✧']
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ProofState, ApplicableRule, ProofStep as ProofStepType } from '../logic/proof'
+import { ProofState, ApplicableRule, ProofStep as ProofStepType, RULE_KEYS } from '../logic/proof'
 import { NaturalDeduction } from '../logic/proof'
 import ProofStep from '../components/ProofStep'
 import RuleSelector from '../components/RuleSelector'
@@ -130,40 +131,40 @@ export default function ProofAssistantPage() {
 
   // Generate EPIC confetti pieces - MORE OF THEM!
   const generateConfetti = useCallback(() => {
-    return Array.from({ length: 150 }, (_, i) => ({
+    return Array.from({ length: CELEBRATION.CONFETTI_COUNT }, (_, i) => ({
       id: i,
-      left: Math.random() * 100,
-      delay: Math.random() * 3,
-      duration: 2 + Math.random() * 3,
+      left: Math.random() * CELEBRATION.SCALE_PERCENT,
+      delay: Math.random() * CELEBRATION.MAX_DELAY_S,
+      duration: CELEBRATION.MIN_DURATION_S + Math.random() * CELEBRATION.MAX_DURATION_EXTRA_S,
       color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
-      size: 10 + Math.random() * 15,
+      size: CELEBRATION.CONFETTI_SIZE_MIN + Math.random() * CELEBRATION.CONFETTI_SIZE_RANGE,
       shape: shapes[Math.floor(Math.random() * shapes.length)],
-      rotation: Math.random() * 360,
+      rotation: Math.random() * CELEBRATION.FULL_ROTATION_DEG,
     }))
   }, [])
 
   // Generate fireworks
   const generateFireworks = useCallback(() => {
-    return Array.from({ length: 12 }, (_, i) => ({
+    return Array.from({ length: CELEBRATION.FIREWORK_COUNT }, (_, i) => ({
       id: i,
-      left: 10 + Math.random() * 80,
-      top: 10 + Math.random() * 60,
-      delay: Math.random() * 2,
+      left: CELEBRATION.MIN_POSITION_PERCENT + Math.random() * CELEBRATION.MAX_X_POSITION_PERCENT,
+      top: CELEBRATION.MIN_POSITION_PERCENT + Math.random() * CELEBRATION.MAX_Y_POSITION_PERCENT,
+      delay: Math.random() * CELEBRATION.FIREWORK_DELAY_S,
       color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
-      size: 50 + Math.random() * 100,
+      size: CELEBRATION.FIREWORK_SIZE_MIN + Math.random() * CELEBRATION.FIREWORK_SIZE_RANGE,
     }))
   }, [])
 
   // Generate floating emojis
   const generateFloatingEmojis = useCallback(() => {
     const emojis = ['🎉', '🎊', '🌟', '⭐', '✨', '💫', '🎆', '🎇', '🏆', '👏', '🙌', '💯', '🔥', '💪']
-    return Array.from({ length: 30 }, (_, i) => ({
+    return Array.from({ length: CELEBRATION.FLOATING_EMOJI_COUNT }, (_, i) => ({
       id: i,
-      left: Math.random() * 100,
-      bottom: Math.random() * 30,
-      delay: Math.random() * 3,
+      left: Math.random() * CELEBRATION.SCALE_PERCENT,
+      bottom: Math.random() * CELEBRATION.MAX_BOTTOM_PERCENT,
+      delay: Math.random() * CELEBRATION.MAX_DELAY_S,
       emoji: emojis[Math.floor(Math.random() * emojis.length)],
-      size: 24 + Math.random() * 32,
+      size: CELEBRATION.EMOJI_SIZE_MIN + Math.random() * CELEBRATION.EMOJI_SIZE_RANGE,
     }))
   }, [])
 
@@ -189,9 +190,9 @@ export default function ProofAssistantPage() {
       id: index + 1,
       lineNumber: String(index + 1),
       formula: premise,
-      rule: 'Premise',
+      ruleKey: RULE_KEYS.PREMISE,
       dependencies: [],
-      justification: t('given'),
+      justificationKey: 'justificationPremise',
       depth: 0,
     }))
 
@@ -258,15 +259,15 @@ export default function ProofAssistantPage() {
         // Phase 2: More fireworks after 1 second
         setTimeout(() => {
           setFireworks(generateFireworks())
-        }, 1000)
+        }, ANIMATION_MS.FAST)
         
         // Phase 3: Even more after 2 seconds
         setTimeout(() => {
           setConfetti(generateConfetti())
-        }, 2000)
+        }, ANIMATION_MS.MEDIUM)
         
         // Auto-hide celebration after 6 seconds (more time to enjoy!)
-        setTimeout(() => setShowCelebration(false), 6000)
+        setTimeout(() => setShowCelebration(false), ANIMATION_MS.SLOW)
       }
 
       setProofState(newState)
@@ -289,7 +290,7 @@ export default function ProofAssistantPage() {
     if (!step) return
 
     // Don't allow deleting premises
-    if (step.rule === 'Premise') {
+    if (step.ruleKey === RULE_KEYS.PREMISE) {
       setErrorMessage(t('cannotDeletePremise'))
       return
     }
@@ -311,7 +312,7 @@ export default function ProofAssistantPage() {
     let newDepth = 0
     if (stepsToKeep.length > 0) {
       const lastStep = stepsToKeep[stepsToKeep.length - 1]
-      newDepth = lastStep.rule === 'Assume' ? lastStep.depth : lastStep.depth
+      newDepth = lastStep.ruleKey === RULE_KEYS.ASSUME ? lastStep.depth : lastStep.depth
     }
 
     setProofState({
@@ -332,9 +333,9 @@ export default function ProofAssistantPage() {
       id: index + 1,
       lineNumber: String(index + 1),
       formula: premise,
-      rule: 'Premise',
+      ruleKey: RULE_KEYS.PREMISE,
       dependencies: [],
-      justification: t('given'),
+      justificationKey: 'justificationPremise',
       depth: 0,
     }))
 
@@ -404,16 +405,16 @@ export default function ProofAssistantPage() {
 
     // Hypothetical Syllogism: needs 2 MP applications
     if (selectedKB === 'syllogism' && proofState.goal === 'r') {
-      if (proofState.steps.length === 3 && selectedSteps.length === 0) {
+      if (proofState.steps.length === PROOF_HINT_STEPS.SYLLOGISM_INITIAL && selectedSteps.length === 0) {
         return t('hintSelectForMP1')
       }
-      if (proofState.steps.length === 3 && selectedSteps.length === 2) {
+      if (proofState.steps.length === PROOF_HINT_STEPS.SYLLOGISM_INITIAL && selectedSteps.length === PROOF_HINT_STEPS.STEPS_REQUIRED) {
         return t('hintClickMP')
       }
-      if (proofState.steps.length === 4 && selectedSteps.length === 0) {
+      if (proofState.steps.length === PROOF_HINT_STEPS.SYLLOGISM_AFTER_MP && selectedSteps.length === 0) {
         return t('hintSelectForMP2')
       }
-      if (proofState.steps.length === 4 && selectedSteps.length === 2) {
+      if (proofState.steps.length === PROOF_HINT_STEPS.SYLLOGISM_AFTER_MP && selectedSteps.length === PROOF_HINT_STEPS.STEPS_REQUIRED) {
         return t('hintClickMPAgain')
       }
     }
@@ -632,16 +633,16 @@ export default function ProofAssistantPage() {
             }}
           >
             {/* ⭐ Background Stars ⭐ */}
-            {Array.from({ length: 50 }).map((_, i) => (
+            {Array.from({ length: CELEBRATION.STAR_COUNT }).map((_, i) => (
               <AutoAwesome
                 key={`star-${i}`}
                 sx={{
                   position: 'fixed',
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  fontSize: 10 + Math.random() * 20,
+                  left: `${Math.random() * CELEBRATION.SCALE_PERCENT}%`,
+                  top: `${Math.random() * CELEBRATION.SCALE_PERCENT}%`,
+                  fontSize: CELEBRATION.STAR_SIZE_MIN + Math.random() * CELEBRATION.STAR_SIZE_RANGE,
                   color: 'gold',
-                  animation: `${twinkle} ${1 + Math.random()}s ease-in-out infinite ${Math.random()}s`,
+                  animation: `${twinkle} ${CELEBRATION.TWINKLE_BASE_DURATION + Math.random()}s ease-in-out infinite ${Math.random()}s`,
                   pointerEvents: 'none',
                 }}
               />
@@ -839,7 +840,7 @@ export default function ProofAssistantPage() {
                     isSelected={selectedSteps.includes(step.id)}
                     onToggleSelect={handleToggleStepSelection}
                     onDelete={handleDeleteStep}
-                    canDelete={step.rule !== 'Premise' && !proofState.isComplete}
+                    canDelete={step.ruleKey !== RULE_KEYS.PREMISE && !proofState.isComplete}
                   />
                 ))}
               </Box>

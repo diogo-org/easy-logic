@@ -3,12 +3,14 @@
  */
 
 // Core types and parsing
-export type { Token, Formula } from './common'
+export type { Token, Formula, FormulaTypeValue, TokenTypeValue } from './common'
 export { 
   Tokenizer, 
   Parser, 
   tokenizeAndParse, 
-  extractVariables 
+  extractVariables,
+  FormulaType,
+  TokenType,
 } from './common'
 
 // LaTeX conversion
