@@ -2,7 +2,6 @@
  * Proof Assistant Page - Manual proof construction using Natural Deduction
  */
 
-import { useState, useEffect, useCallback } from 'react'
 import {
   Box,
   Container,
@@ -22,82 +21,31 @@ import {
   IconButton,
   Snackbar,
   Chip,
-  keyframes,
   Backdrop,
 } from '@mui/material'
-import { ArrowBack, Refresh, HelpOutline, Celebration, Star, AutoAwesome } from '@mui/icons-material'
-import { CELEBRATION, ANIMATION_MS, PROOF_HINT_STEPS } from '../constants/ui'
-
-// 🎆 EPIC CELEBRATION ANIMATIONS 🎆
-
-// Confetti falling with spinning
-const confettiFall = keyframes`
-  0% {
-    transform: translateY(-100vh) rotate(0deg) scale(1);
-    opacity: 1;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100vh) rotate(1080deg) scale(0.5);
-    opacity: 0;
-  }
-`
-
-// Stars twinkling
-const twinkle = keyframes`
-  0%, 100% { opacity: 0.3; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.2); }
-`
-
-// Pulse heartbeat
-const heartbeat = keyframes`
-  0%, 100% { transform: scale(1); }
-  25% { transform: scale(1.15); }
-  50% { transform: scale(1); }
-  75% { transform: scale(1.1); }
-`
-
-// Shake the screen!
-const shake = keyframes`
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-  20%, 40%, 60%, 80% { transform: translateX(5px); }
-`
-
-// Firework burst
-const fireworkBurst = keyframes`
-  0% { transform: scale(0); opacity: 1; }
-  100% { transform: scale(3); opacity: 0; }
-`
-
-// Rainbow color cycle
-const rainbowGlow = keyframes`
-  0% { filter: hue-rotate(0deg) drop-shadow(0 0 20px gold); }
-  100% { filter: hue-rotate(360deg) drop-shadow(0 0 40px gold); }
-`
-
-// Big bang entrance
-const bounceIn = keyframes`
-  0% { transform: scale(0) rotate(-10deg); opacity: 0; }
-  50% { transform: scale(1.2) rotate(5deg); }
-  70% { transform: scale(0.9) rotate(-3deg); }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
-`
-
-// Float up
-const floatUp = keyframes`
-  0% { transform: translateY(0) scale(1); opacity: 1; }
-  100% { transform: translateY(-200px) scale(1.5); opacity: 0; }
-`
-
-const confettiColors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ff8800', '#88ff00', '#ff0088', '#00ff88', '#gold', '#silver']
-const shapes = ['●', '■', '▲', '★', '♦', '♥', '✦', '✧']
+import {
+  ArrowBack,
+  Refresh,
+  HelpOutline,
+  Celebration,
+  Star,
+  AutoAwesome,
+} from '@mui/icons-material'
+import { CELEBRATION, PROOF_HINT_STEPS } from '../constants/ui'
+import {
+  confettiFall,
+  twinkle,
+  heartbeat,
+  shake,
+  fireworkBurst,
+  rainbowGlow,
+  bounceIn,
+  floatUp,
+} from '../constants/animations'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ProofState, ApplicableRule, ProofStep as ProofStepType, RULE_KEYS } from '../logic/proof'
-import { NaturalDeduction } from '../logic/proof'
+import { RULE_KEYS } from '../logic/proof'
+import { useProofState } from '../hooks/useProofState'
 import ProofStep from '../components/ProofStep'
 import RuleSelector from '../components/RuleSelector'
 
@@ -105,253 +53,39 @@ export default function ProofAssistantPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { t } = useTranslation()
-  const proofSystem = new NaturalDeduction()
 
   // Check if a formula was passed from navigation state
   const initialFormula = (location.state as { formula?: string })?.formula || ''
 
-  const [goalDialogOpen, setGoalDialogOpen] = useState(!initialFormula)
-  const [customGoal, setCustomGoal] = useState('')
-  const [selectedKB, setSelectedKB] = useState<string>('empty')
-  const [proofState, setProofState] = useState<ProofState>({
-    goal: initialFormula,
-    premises: [],
-    steps: [],
-    currentDepth: 0,
-    currentSubproofId: '',
-    nextStepInSubproof: [1],
-    isComplete: false,
-  })
-  const [selectedSteps, setSelectedSteps] = useState<number[]>([])
-  const [applicableRules, setApplicableRules] = useState<ApplicableRule[]>([])
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const [showHint, setShowHint] = useState(true)
-  const [showCelebration, setShowCelebration] = useState(false)
-
-  // Generate EPIC confetti pieces - MORE OF THEM!
-  const generateConfetti = useCallback(() => {
-    return Array.from({ length: CELEBRATION.CONFETTI_COUNT }, (_, i) => ({
-      id: i,
-      left: Math.random() * CELEBRATION.SCALE_PERCENT,
-      delay: Math.random() * CELEBRATION.MAX_DELAY_S,
-      duration: CELEBRATION.MIN_DURATION_S + Math.random() * CELEBRATION.MAX_DURATION_EXTRA_S,
-      color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
-      size: CELEBRATION.CONFETTI_SIZE_MIN + Math.random() * CELEBRATION.CONFETTI_SIZE_RANGE,
-      shape: shapes[Math.floor(Math.random() * shapes.length)],
-      rotation: Math.random() * CELEBRATION.FULL_ROTATION_DEG,
-    }))
-  }, [])
-
-  // Generate fireworks
-  const generateFireworks = useCallback(() => {
-    return Array.from({ length: CELEBRATION.FIREWORK_COUNT }, (_, i) => ({
-      id: i,
-      left: CELEBRATION.MIN_POSITION_PERCENT + Math.random() * CELEBRATION.MAX_X_POSITION_PERCENT,
-      top: CELEBRATION.MIN_POSITION_PERCENT + Math.random() * CELEBRATION.MAX_Y_POSITION_PERCENT,
-      delay: Math.random() * CELEBRATION.FIREWORK_DELAY_S,
-      color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
-      size: CELEBRATION.FIREWORK_SIZE_MIN + Math.random() * CELEBRATION.FIREWORK_SIZE_RANGE,
-    }))
-  }, [])
-
-  // Generate floating emojis
-  const generateFloatingEmojis = useCallback(() => {
-    const emojis = ['🎉', '🎊', '🌟', '⭐', '✨', '💫', '🎆', '🎇', '🏆', '👏', '🙌', '💯', '🔥', '💪']
-    return Array.from({ length: CELEBRATION.FLOATING_EMOJI_COUNT }, (_, i) => ({
-      id: i,
-      left: Math.random() * CELEBRATION.SCALE_PERCENT,
-      bottom: Math.random() * CELEBRATION.MAX_BOTTOM_PERCENT,
-      delay: Math.random() * CELEBRATION.MAX_DELAY_S,
-      emoji: emojis[Math.floor(Math.random() * emojis.length)],
-      size: CELEBRATION.EMOJI_SIZE_MIN + Math.random() * CELEBRATION.EMOJI_SIZE_RANGE,
-    }))
-  }, [])
-
-  const [confetti, setConfetti] = useState(generateConfetti())
-  const [fireworks, setFireworks] = useState(generateFireworks())
-  const [floatingEmojis, setFloatingEmojis] = useState(generateFloatingEmojis())
-
-  // Update applicable rules whenever proof state changes
-  useEffect(() => {
-    if (proofState.goal) {
-      const rules = proofSystem.getRules()
-      const applicable = rules.map((rule) => proofSystem.checkApplicability(rule, proofState))
-      setApplicableRules(applicable)
-    }
-  }, [proofState])
-
-  const handleGoalSelect = (formula: string, kbId?: string) => {
-    const kb = kbId ? proofSystem.getKnowledgeBases().find(k => k.id === kbId) : 
-                      proofSystem.getKnowledgeBases().find(k => k.id === selectedKB)
-    const kbPremises = kb?.premises || []
-    
-    const premiseSteps: ProofStepType[] = kbPremises.map((premise, index) => ({
-      id: index + 1,
-      lineNumber: String(index + 1),
-      formula: premise,
-      ruleKey: RULE_KEYS.PREMISE,
-      dependencies: [],
-      justificationKey: 'justificationPremise',
-      depth: 0,
-    }))
-
-    setProofState({
-      goal: formula,
-      premises: kbPremises,
-      steps: premiseSteps,
-      currentDepth: 0,
-      currentSubproofId: '',
-      nextStepInSubproof: [premiseSteps.length + 1],
-      isComplete: false,
-    })
-    setGoalDialogOpen(false)
-    setErrorMessage(null)
-    setSuccessMessage(null)
-  }
-
-  const handleCustomGoalSubmit = () => {
-    if (customGoal.trim()) {
-      handleGoalSelect(customGoal.trim())
-    }
-  }
-
-  const handleRuleSelect = (ruleId: string, userInput?: string) => {
-    const rule = proofSystem.getRules().find((r) => r.id === ruleId)
-    if (!rule) return
-
-    try {
-      const newStep = proofSystem.applyRule(rule, proofState, selectedSteps, userInput)
-
-      if (!newStep) {
-        setErrorMessage(t('couldNotApplyRule'))
-        return
-      }
-
-      const newSteps = [...proofState.steps, newStep]
-      let newDepth = proofState.currentDepth
-
-      // Update depth based on rule
-      if (rule.id === 'assume') {
-        newDepth = newStep.depth
-      } else if (rule.id === 'impl_intro') {
-        newDepth = newStep.depth
-      }
-
-      const newState = {
-        ...proofState,
-        steps: newSteps,
-        currentDepth: newDepth,
-        isComplete: false,
-      }
-
-      // Check if proof is complete
-      if (proofSystem.validateProof(newState)) {
-        newState.isComplete = true
-        setSuccessMessage(t('proofCompleteMessage'))
-        
-        // 🎆 TRIGGER THE BIG BANG! 🎆
-        setShowCelebration(true)
-        setConfetti(generateConfetti())
-        setFireworks(generateFireworks())
-        setFloatingEmojis(generateFloatingEmojis())
-        
-        // Phase 2: More fireworks after 1 second
-        setTimeout(() => {
-          setFireworks(generateFireworks())
-        }, ANIMATION_MS.FAST)
-        
-        // Phase 3: Even more after 2 seconds
-        setTimeout(() => {
-          setConfetti(generateConfetti())
-        }, ANIMATION_MS.MEDIUM)
-        
-        // Auto-hide celebration after 6 seconds (more time to enjoy!)
-        setTimeout(() => setShowCelebration(false), ANIMATION_MS.SLOW)
-      }
-
-      setProofState(newState)
-      setSelectedSteps([])
-      setErrorMessage(null)
-    } catch (error) {
-      console.error('Error applying rule:', error)
-      setErrorMessage(t('errorApplyingRule'))
-    }
-  }
-
-  const handleToggleStepSelection = (stepId: number) => {
-    setSelectedSteps((prev) =>
-      prev.includes(stepId) ? prev.filter((id) => id !== stepId) : [...prev, stepId]
-    )
-  }
-
-  const handleDeleteStep = (stepId: number) => {
-    const step = proofState.steps.find(s => s.id === stepId)
-    if (!step) return
-
-    // Don't allow deleting premises
-    if (step.ruleKey === RULE_KEYS.PREMISE) {
-      setErrorMessage(t('cannotDeletePremise'))
-      return
-    }
-
-    // Check if any other steps depend on this one
-    const dependentSteps = proofState.steps.filter(s => 
-      s.dependencies.includes(stepId)
-    )
-    if (dependentSteps.length > 0) {
-      setErrorMessage(t('cannotDeleteDependency'))
-      return
-    }
-
-    // Find all steps that should be deleted (this step and any steps after it at same or higher depth)
-    const stepIndex = proofState.steps.findIndex(s => s.id === stepId)
-    const stepsToKeep = proofState.steps.slice(0, stepIndex)
-    
-    // Recalculate current depth based on remaining steps
-    let newDepth = 0
-    if (stepsToKeep.length > 0) {
-      const lastStep = stepsToKeep[stepsToKeep.length - 1]
-      newDepth = lastStep.ruleKey === RULE_KEYS.ASSUME ? lastStep.depth : lastStep.depth
-    }
-
-    setProofState({
-      ...proofState,
-      steps: stepsToKeep,
-      currentDepth: newDepth,
-      currentSubproofId: proofState.currentSubproofId,
-      nextStepInSubproof: proofState.nextStepInSubproof,
-      isComplete: false,
-    })
-    setSelectedSteps(selectedSteps.filter(id => id < stepId))
-    setSuccessMessage(t('stepDeleted'))
-    setErrorMessage(null)
-  }
-
-  const handleReset = () => {
-    const premiseSteps: ProofStepType[] = proofState.premises.map((premise, index) => ({
-      id: index + 1,
-      lineNumber: String(index + 1),
-      formula: premise,
-      ruleKey: RULE_KEYS.PREMISE,
-      dependencies: [],
-      justificationKey: 'justificationPremise',
-      depth: 0,
-    }))
-
-    setProofState({
-      goal: proofState.goal,
-      premises: proofState.premises,
-      steps: premiseSteps,
-      currentDepth: 0,
-      currentSubproofId: '',
-      nextStepInSubproof: [premiseSteps.length + 1],
-      isComplete: false,
-    })
-    setSelectedSteps([])
-    setErrorMessage(null)
-    setSuccessMessage(null)
-  }
+  // Use the custom hook for proof state management
+  const {
+    proofSystem,
+    goalDialogOpen,
+    customGoal,
+    setCustomGoal,
+    selectedKB,
+    setSelectedKB,
+    proofState,
+    selectedSteps,
+    applicableRules,
+    errorMessage,
+    setErrorMessage,
+    successMessage,
+    setSuccessMessage,
+    showHint,
+    setShowHint,
+    showCelebration,
+    confetti,
+    fireworks,
+    floatingEmojis,
+    handleGoalSelect,
+    handleCustomGoalSubmit,
+    handleRuleSelect,
+    handleToggleStepSelection,
+    handleDeleteStep,
+    handleReset,
+    handleCloseCelebration,
+  } = useProofState(initialFormula)
 
   const knowledgeBases = proofSystem.getKnowledgeBases()
 
@@ -622,7 +356,7 @@ export default function ProofAssistantPage() {
           {/* 🎆🎆🎆 THE BIG BANG CELEBRATION OVERLAY 🎆🎆🎆 */}
           <Backdrop
             open={showCelebration}
-            onClick={() => setShowCelebration(false)}
+            onClick={handleCloseCelebration}
             sx={{ 
               zIndex: 9999, 
               bgcolor: 'rgba(0,0,0,0.7)',
