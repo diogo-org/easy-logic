@@ -3,6 +3,47 @@
 ## Project Overview
 A propositional logic formula renderer and proof assistant with i18n support (English/Portuguese). Built with React 18, TypeScript, MUI v7, and Vite.
 
+## Development Principles
+
+### Test-Driven Development (TDD) - CRITICAL ⚠️
+**ALL new features and bug fixes MUST follow strict TDD:**
+
+1. **Write failing tests FIRST** - Never implement before seeing red tests
+2. **Verify test failures** - Run tests and confirm they fail for the right reason
+3. **Implement minimal code** - Make tests pass with simplest solution
+4. **Refactor** - Clean up while keeping tests green
+5. **Commit only when tests pass** - Pre-commit hooks enforce this
+
+**TDD Workflow Example:**
+```typescript
+// ❌ WRONG: Implementing before testing
+export function newFeature() { /* implementation */ }
+
+// ✅ CORRECT: Test-first approach
+describe('newFeature', () => {
+  it('should handle basic case', () => {
+    expect(newFeature()).toBe(expected) // FAILS (red)
+  })
+})
+// Then implement to make it pass (green)
+// Then refactor if needed (still green)
+```
+
+**Why TDD is mandatory:**
+- Prevents regressions caught after commit
+- Ensures testable, modular design
+- Documents expected behavior
+- Catches edge cases early
+- Pre-commit hooks verify ≥80% coverage
+
+### Code Quality Standards
+- **Single Responsibility Principle** - Classes/functions do ONE thing well
+- **Low Coupling** - Minimize dependencies between modules
+- **High Cohesion** - Related functionality stays together
+- **No God Classes** - Keep files under 200 lines when possible
+- **No Magic Numbers** - Use named constants (ESLint enforces this)
+- **No Hardcoded Strings** - Use translation keys (pre-commit blocks commits)
+
 ## Architecture
 
 ### Folder Structure
@@ -95,14 +136,30 @@ Operators: `^` (AND), `|` (OR), `~` (NOT), `->` (IMPLIES), `<->` (IFF), `T`/`F` 
 
 ## Adding New Features
 
+### TDD Workflow (MANDATORY)
+**For ANY new feature or bug fix:**
+
+1. **Write failing test(s)** - Cover expected behavior and edge cases
+2. **Run tests** - Confirm they fail with `npm test`
+3. **Implement minimal solution** - Make tests pass
+4. **Run tests again** - Verify all pass with `npm test`
+5. **Refactor** - Improve code quality while keeping tests green
+6. **Verify coverage** - Check with `npm run test:coverage` (must be ≥80%)
+7. **Commit** - Pre-commit hooks will verify everything
+
+**Never skip step 1 or 2** - Implementing before seeing tests fail breaks the TDD cycle and risks shipping broken code.
+
 ### New Translation Key
 1. Add to both `en.json` and `pt-BR.json` (same key, translated value)
 2. Use via `t('keyName')` in component
 
-### New Proof Rule
-1. Add rule object to `NaturalDeduction.ts` with `nameKey`/`descriptionKey`
-2. Add translation keys to both locale files
-3. Implement logic in `applyRule()` switch statement
+### New Proof Rule (TDD Required)
+1. **Write tests** - Test rule application, error cases, formula generation
+2. **Run tests** - Verify they fail
+3. Add rule object to `NaturalDeduction.ts` with `nameKey`/`descriptionKey`
+4. Add translation keys to both locale files
+5. Implement logic in `applyRule()` switch statement
+6. **Verify tests pass** - Run `npm test`
 
 ### New Knowledge Base
 Add to `knowledgeBases` array in `NaturalDeduction.ts` with `nameKey`, `descriptionKey`, premises, and `suggestedGoals` (each goal needs `labelKey`/`descriptionKey`).

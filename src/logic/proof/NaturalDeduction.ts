@@ -5,193 +5,16 @@
  */
 
 import { ProofSystem, Rule, ProofState, ProofStep, ApplicableRule, KnowledgeBase, RULE_KEYS } from './types'
-import { tokenizeAndParse, Formula, FormulaType } from '../formula/common'
+import { tokenizeAndParse, FormulaType } from '../formula/common'
+import { knowledgeBases } from './knowledgeBases'
+import { naturalDeductionRules } from './rules'
+import { formulaToString, isFullyParenthesized, parseImplication, normalizeFormula } from './formulaHelpers'
 
 export class NaturalDeduction implements ProofSystem {
   name = 'Natural Deduction'
 
-  private knowledgeBases: KnowledgeBase[] = [
-    {
-      id: 'empty',
-      nameKey: 'kbEmpty',
-      descriptionKey: 'kbEmptyDesc',
-      premises: [],
-      suggestedGoals: [
-        {
-          labelKey: 'goalIdentity',
-          formula: 'p -> p',
-          descriptionKey: 'goalIdentityDesc',
-        },
-      ],
-    },
-    {
-      id: 'modus-ponens',
-      nameKey: 'kbModusPonens',
-      descriptionKey: 'kbModusPonensDesc',
-      premises: ['p', 'p -> q'],
-      suggestedGoals: [
-        {
-          labelKey: 'goalDeriveQ',
-          formula: 'q',
-          descriptionKey: 'goalDeriveQDesc',
-        },
-      ],
-    },
-    {
-      id: 'conjunction',
-      nameKey: 'kbConjunction',
-      descriptionKey: 'kbConjunctionDesc',
-      premises: ['p', 'q'],
-      suggestedGoals: [
-        {
-          labelKey: 'goalCombineAnd',
-          formula: 'p ^ q',
-          descriptionKey: 'goalCombineAndDesc',
-        },
-        {
-          labelKey: 'goalCommutative',
-          formula: 'q ^ p',
-          descriptionKey: 'goalCommutativeDesc',
-        },
-      ],
-    },
-    {
-      id: 'disjunction',
-      nameKey: 'kbDisjunction',
-      descriptionKey: 'kbDisjunctionDesc',
-      premises: ['p'],
-      suggestedGoals: [
-        {
-          labelKey: 'goalAddOr',
-          formula: 'p | q',
-          descriptionKey: 'goalAddOrDesc',
-        },
-      ],
-    },
-    {
-      id: 'syllogism',
-      nameKey: 'kbSyllogism',
-      descriptionKey: 'kbSyllogismDesc',
-      premises: ['p', 'p -> q', 'q -> r'],
-      suggestedGoals: [
-        {
-          labelKey: 'goalDeriveR',
-          formula: 'r',
-          descriptionKey: 'goalDeriveRDesc',
-        },
-        {
-          labelKey: 'goalDirectImpl',
-          formula: 'p -> r',
-          descriptionKey: 'goalDirectImplDesc',
-        },
-      ],
-    },
-    {
-      id: 'elimination',
-      nameKey: 'kbElimination',
-      descriptionKey: 'kbEliminationDesc',
-      premises: ['p ^ q'],
-      suggestedGoals: [
-        {
-          labelKey: 'goalExtractLeft',
-          formula: 'p',
-          descriptionKey: 'goalExtractLeftDesc',
-        },
-        {
-          labelKey: 'goalExtractRight',
-          formula: 'q',
-          descriptionKey: 'goalExtractRightDesc',
-        },
-      ],
-    },
-  ]
-
-  private rules: Rule[] = [
-    {
-      id: 'assume',
-      nameKey: 'ruleAssume',
-      descriptionKey: 'ruleAssumeDesc',
-      category: 'assumption',
-      requiredSteps: 0,
-    },
-    {
-      id: 'mp',
-      nameKey: 'ruleModusPonens',
-      descriptionKey: 'ruleModusPonensDesc',
-      category: 'basic',
-      requiredSteps: 2,
-    },
-    {
-      id: 'mt',
-      nameKey: 'ruleModusTollens',
-      descriptionKey: 'ruleModusTollensDesc',
-      category: 'basic',
-      requiredSteps: 2,
-    },
-    {
-      id: 'and_intro',
-      nameKey: 'ruleAndIntro',
-      descriptionKey: 'ruleAndIntroDesc',
-      category: 'introduction',
-      requiredSteps: 2,
-    },
-    {
-      id: 'and_elim_left',
-      nameKey: 'ruleAndElimLeft',
-      descriptionKey: 'ruleAndElimLeftDesc',
-      category: 'elimination',
-      requiredSteps: 1,
-    },
-    {
-      id: 'and_elim_right',
-      nameKey: 'ruleAndElimRight',
-      descriptionKey: 'ruleAndElimRightDesc',
-      category: 'elimination',
-      requiredSteps: 1,
-    },
-    {
-      id: 'or_intro_left',
-      nameKey: 'ruleOrIntroLeft',
-      descriptionKey: 'ruleOrIntroLeftDesc',
-      category: 'introduction',
-      requiredSteps: 1,
-    },
-    {
-      id: 'or_intro_right',
-      nameKey: 'ruleOrIntroRight',
-      descriptionKey: 'ruleOrIntroRightDesc',
-      category: 'introduction',
-      requiredSteps: 1,
-    },
-    {
-      id: 'double_neg',
-      nameKey: 'ruleDoubleNeg',
-      descriptionKey: 'ruleDoubleNegDesc',
-      category: 'basic',
-      requiredSteps: 1,
-    },
-    {
-      id: 'impl_intro',
-      nameKey: 'ruleImplIntro',
-      descriptionKey: 'ruleImplIntroDesc',
-      category: 'introduction',
-      requiredSteps: 1,
-    },
-    {
-      id: 'or_elim',
-      nameKey: 'ruleOrElim',
-      descriptionKey: 'ruleOrElimDesc',
-      category: 'elimination',
-      requiredSteps: 1,
-    },
-    {
-      id: 'lem',
-      nameKey: 'ruleLEM',
-      descriptionKey: 'ruleLEMDesc',
-      category: 'basic',
-      requiredSteps: 0,
-    },
-  ]
+  private knowledgeBases = knowledgeBases
+  private rules = naturalDeductionRules
 
   getRules(): Rule[] {
     return this.rules
@@ -400,7 +223,7 @@ export class NaturalDeduction implements ProofSystem {
           return {
             id: newId,
             lineNumber: this.computeLineNumber(state, false),
-            formula: this.formulaToString(parsed.left),
+            formula: formulaToString(parsed.left),
             ruleKey: RULE_KEYS.AND_ELIM_LEFT,
             dependencies: selectedSteps,
             justificationKey: 'justificationAndElimLeft',
@@ -419,7 +242,7 @@ export class NaturalDeduction implements ProofSystem {
           return {
             id: newId,
             lineNumber: this.computeLineNumber(state, false),
-            formula: this.formulaToString(parsed.right),
+            formula: formulaToString(parsed.right),
             ruleKey: RULE_KEYS.AND_ELIM_RIGHT,
             dependencies: selectedSteps,
             justificationKey: 'justificationAndElimRight',
@@ -471,7 +294,7 @@ export class NaturalDeduction implements ProofSystem {
           return {
             id: newId,
             lineNumber: this.computeLineNumber(state, false),
-            formula: this.formulaToString(parsed.left.left),
+            formula: formulaToString(parsed.left.left),
             ruleKey: RULE_KEYS.DOUBLE_NEG,
             dependencies: selectedSteps,
             justificationKey: 'justificationDoubleNeg',
@@ -547,7 +370,7 @@ export class NaturalDeduction implements ProofSystem {
           
           // Determine if we need to wrap the formula in parentheses
           // We need parentheses if the formula contains binary operators
-          const needsParens = /[|^&]|->|<->/.test(trimmed) && !this.isFullyParenthesized(trimmed)
+          const needsParens = /[|^&]|->|<->/.test(trimmed) && !isFullyParenthesized(trimmed)
           
           const wrappedFormula = needsParens ? `(${trimmed})` : trimmed
           const lemFormula = `${wrappedFormula} | ~${wrappedFormula}`
@@ -572,58 +395,19 @@ export class NaturalDeduction implements ProofSystem {
     }
   }
 
-  /**
-   * Check if a formula is already fully wrapped in matching outer parentheses
-   */
-  private isFullyParenthesized(formula: string): boolean {
-    const trimmed = formula.trim()
-    if (!trimmed.startsWith('(') || !trimmed.endsWith(')')) {
-      return false
-    }
-    
-    // Check if the outer parentheses wrap the entire formula
-    let depth = 0
-    for (let i = 0; i < trimmed.length; i++) {
-      if (trimmed[i] === '(') depth++
-      if (trimmed[i] === ')') depth--
-      // If depth reaches 0 before the end, outer parens don't wrap everything
-      if (depth === 0 && i < trimmed.length - 1) {
-        return false
-      }
-    }
-    return true
-  }
-
-  /**
-   * Parse an implication formula and return antecedent/consequent strings.
-   * Returns null if the formula is not an implication.
-   */
-  private parseImplication(formula: string): { antecedent: string; consequent: string } | null {
-    try {
-      const parsed = tokenizeAndParse(formula)
-      if (parsed.type !== FormulaType.IMPLIES) return null
-      return {
-        antecedent: this.formulaToString(parsed.left!),
-        consequent: this.formulaToString(parsed.right!),
-      }
-    } catch {
-      return null
-    }
-  }
-
   private tryModusPonens(stepP: ProofStep, stepImpl: ProofStep): string | null {
-    const impl = this.parseImplication(stepImpl.formula)
+    const impl = parseImplication(stepImpl.formula)
     if (!impl) return null
 
     // Check if stepP matches the antecedent
-    if (this.normalizeFormula(stepP.formula) === this.normalizeFormula(impl.antecedent)) {
+    if (normalizeFormula(stepP.formula) === normalizeFormula(impl.antecedent)) {
       return impl.consequent
     }
     return null
   }
 
   private tryModusTollens(stepImpl: ProofStep, stepNegQ: ProofStep): string | null {
-    const impl = this.parseImplication(stepImpl.formula)
+    const impl = parseImplication(stepImpl.formula)
     if (!impl) return null
 
     // Check if stepNegQ is ¬Q where Q is the consequent
@@ -631,76 +415,16 @@ export class NaturalDeduction implements ProofSystem {
       const parsedNegQ = tokenizeAndParse(stepNegQ.formula)
       if (parsedNegQ.type !== FormulaType.NOT || !parsedNegQ.left) return null
 
-      const negatedFormula = this.formulaToString(parsedNegQ.left)
+      const negatedFormula = formulaToString(parsedNegQ.left)
       
       // Check if negatedFormula matches the consequent
-      if (this.normalizeFormula(negatedFormula) === this.normalizeFormula(impl.consequent)) {
+      if (normalizeFormula(negatedFormula) === normalizeFormula(impl.consequent)) {
         return `~${impl.antecedent}`
       }
       return null
     } catch {
       return null
     }
-  }
-
-  private formulaToString(formula: Formula, parentPrecedence: number = 0): string {
-    // Operator precedence (lower number = lower precedence, same as in parser)
-    const ATOM_PRECEDENCE = 6
-    const precedence: Record<string, number> = {
-      [FormulaType.IFF]: 1,
-      [FormulaType.IMPLIES]: 2,
-      [FormulaType.OR]: 3,
-      [FormulaType.AND]: 4,
-      [FormulaType.NOT]: 5,
-    }
-
-    const needsParens = (type: string): boolean => {
-      const currentPrec = precedence[type] || ATOM_PRECEDENCE
-      return currentPrec < parentPrecedence
-    }
-
-    const wrapIfNeeded = (str: string, type: string): string => {
-      return needsParens(type) ? `(${str})` : str
-    }
-
-    switch (formula.type) {
-      case FormulaType.VAR:
-        return formula.value || ''
-      case FormulaType.TRUE:
-        return 'T'
-      case FormulaType.FALSE:
-        return 'F'
-      case FormulaType.NOT:
-        return `~${this.formulaToString(formula.left!, precedence[FormulaType.NOT])}`
-      case FormulaType.AND: {
-        const left = this.formulaToString(formula.left!, precedence[FormulaType.AND])
-        const right = this.formulaToString(formula.right!, precedence[FormulaType.AND])
-        return wrapIfNeeded(`${left} ^ ${right}`, FormulaType.AND)
-      }
-      case FormulaType.OR: {
-        const left = this.formulaToString(formula.left!, precedence[FormulaType.OR])
-        const right = this.formulaToString(formula.right!, precedence[FormulaType.OR])
-        return wrapIfNeeded(`${left} | ${right}`, FormulaType.OR)
-      }
-      case FormulaType.IMPLIES: {
-        const left = this.formulaToString(formula.left!, precedence[FormulaType.IMPLIES])
-        const right = this.formulaToString(formula.right!, precedence[FormulaType.IMPLIES])
-        return wrapIfNeeded(`${left} -> ${right}`, FormulaType.IMPLIES)
-      }
-      case FormulaType.IFF: {
-        const left = this.formulaToString(formula.left!, precedence[FormulaType.IFF])
-        const right = this.formulaToString(formula.right!, precedence[FormulaType.IFF])
-        return wrapIfNeeded(`${left} <-> ${right}`, FormulaType.IFF)
-      }
-      default:
-        return ''
-    }
-  }
-
-  private normalizeFormula(formula: string): string {
-    // Remove spaces and convert to lowercase
-    // Also remove redundant parentheses for comparison
-    return formula.replace(/\s+/g, '').replace(/[()]/g, '').toLowerCase()
   }
 
   validateProof(state: ProofState): boolean {
@@ -713,7 +437,7 @@ export class NaturalDeduction implements ProofSystem {
     // 2. The last step matches the goal
     return (
       state.currentDepth === 0 &&
-      this.normalizeFormula(lastStep.formula) === this.normalizeFormula(state.goal)
+      normalizeFormula(lastStep.formula) === normalizeFormula(state.goal)
     )
   }
 
