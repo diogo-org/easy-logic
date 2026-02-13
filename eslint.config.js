@@ -1,7 +1,8 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
-import i18next from 'eslint-plugin-i18next';
 
+// High-quality ESLint configuration for TypeScript projects
+// Enforces strict rules to maintain code quality for AI-assisted development
 export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
@@ -10,9 +11,6 @@ export default tseslint.config(
   },
   {
     files: ['src/**/*.ts', 'src/**/*.tsx'],
-    plugins: {
-      i18next,
-    },
     rules: {
       // Prohibit magic numbers - must use named constants
       'no-magic-numbers': ['error', {
@@ -20,29 +18,6 @@ export default tseslint.config(
         ignoreArrayIndexes: true,
         ignoreDefaultValues: true,
         enforceConst: true,
-      }],
-      
-      // Prohibit hardcoded strings in JSX - must use i18n
-      'i18next/no-literal-string': ['error', {
-        mode: 'jsx-text-only',
-        'jsx-attributes': {
-          include: ['title', 'aria-label', 'placeholder', 'alt'],
-        },
-        'jsx-components': {
-          exclude: ['Trans'],
-        },
-        words: {
-          // Exclude patterns that are not user-visible text
-          exclude: [
-            // Single letters
-            '[A-Z]',
-            '[TF]',
-            // Single punctuation marks (universally understood)
-            '^[.:;,!?]$',
-            // Symbols and emojis (allow any string with emojis)
-            '.*[🎉🎊🌟⭐✨💫🎆🎇🏆👏🙌💯🔥💪].*',
-          ],
-        },
       }],
       
       // TypeScript-specific rules
@@ -60,7 +35,6 @@ export default tseslint.config(
     rules: {
       'no-magic-numbers': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
-      'i18next/no-literal-string': 'off',
     },
   }
 );

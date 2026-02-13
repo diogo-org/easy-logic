@@ -1,7 +1,6 @@
-# Easy Logic - AI Coding Instructions
+# Copilot Instructions
 
-## Project Overview
-A propositional logic formula renderer and proof assistant with i18n support (English/Portuguese). Built with React 18, TypeScript, MUI v7, and Vite.
+> AI assistant guidance for high-quality TypeScript development
 
 ## Development Principles
 
@@ -10,7 +9,7 @@ A propositional logic formula renderer and proof assistant with i18n support (En
 **High Cohesion** = Each module does ONE thing and does it well
 - All code in a module should be related to the same concern
 - If you can't describe a module's purpose in one sentence, split it
-- Example: `useCelebration` handles ONLY celebration animations, not proof logic
+- Example: `useAnimation` handles ONLY animations, not business logic
 
 **Low Coupling** = Modules depend minimally on each other
 - Modules communicate through clean interfaces (props, callbacks, return values)
@@ -21,38 +20,36 @@ A propositional logic formula renderer and proof assistant with i18n support (En
 
 ❌ **BAD - Low Cohesion (multiple concerns in one module):**
 ```typescript
-// useProofState.ts mixing business logic with UI concerns
-function useProofState() {
-  // Proof logic
-  const [proofState, setProofState] = useState(...)
+// useFeature.ts mixing business logic with UI concerns
+function useFeature() {
+  // Business logic
+  const [state, setState] = useState(...)
   
   // UI animation logic (WRONG - different concern!)
-  const generateConfetti = () => { ... }
-  const generateFireworks = () => { ... }
+  const generateAnimation = () => { ... }
   
-  return { proofState, confetti, fireworks } // Mixed concerns!
+  return { state, animation } // Mixed concerns!
 }
 ```
 
 ✅ **GOOD - High Cohesion (single concern per module):**
 ```typescript
-// useProofState.ts - ONLY proof logic
-function useProofState(onComplete) {
-  const [proofState, setProofState] = useState(...)
-  // ... only proof-related state and actions
-  return { proofState, handleRuleSelect }
+// useFeature.ts - ONLY business logic
+function useFeature(onComplete) {
+  const [state, setState] = useState(...)
+  return { state, handleAction }
 }
 
-// useCelebration.ts - ONLY UI animations
-function useCelebration() {
-  const generateConfetti = () => { ... }
-  return { confetti, fireworks, triggerCelebration }
+// useAnimation.ts - ONLY UI animations
+function useAnimation() {
+  const generateAnimation = () => { ... }
+  return { animation, trigger }
 }
 
 // Component combines them
-function ProofPage() {
-  const { triggerCelebration } = useCelebration()
-  const proof = useProofState(triggerCelebration) // Low coupling via callback
+function Page() {
+  const { trigger } = useAnimation()
+  const feature = useFeature(trigger) // Low coupling via callback
 }
 ```
 
@@ -68,6 +65,7 @@ function ProofPage() {
 - Can't describe module's purpose in one clear sentence
 
 ### Test-Driven Development (TDD) - CRITICAL ⚠️
+
 **ALL new features and bug fixes MUST follow strict TDD:**
 
 1. **Write failing tests FIRST** - Never implement before seeing red tests
@@ -99,128 +97,150 @@ describe('newFeature', () => {
 - Pre-commit hooks verify ≥80% coverage
 
 ### Code Quality Standards
-- **Single Responsibility Principle** - Classes/functions do ONE thing well (see High Cohesion above)
+
+- **Single Responsibility Principle** - Classes/functions do ONE thing well
 - **No God Classes** - Keep files under 200 lines when possible
 - **No Magic Numbers** - Use named constants (ESLint enforces this)
-- **No Hardcoded Strings** - Use translation keys (pre-commit blocks commits)
 - **Separation of Concerns** - Never mix business logic with UI concerns in the same module
 
-## Architecture
+## Pre-Commit Quality Gates
 
-### Folder Structure
-The codebase separates **business logic** from **UI components** for better testability:
+The hook (`.husky/pre-commit.cjs`) runs 6 checks - **all must pass**:
+
+1. **ESLint** - `npm run lint` must pass with no violations
+2. **Tests + Coverage** - `vitest --coverage` must pass with ≥80% coverage
+3. **Code Duplication** - ≤1% code duplication (jscpd)
+4. **Secrets Detection** - No API keys, tokens, or passwords
+5. **TypeScript** - No type errors (`tsc --noEmit`)
+6. **Build** - `npm run build` must succeed
+
+**These checks are non-negotiable.** They ensure code quality and prevent bad commits.
+
+Run manually: `node .husky/pre-commit.cjs`
+
+## Architecture Guidelines
+
+### Folder Structure Pattern
+
+Separate **business logic** from **UI components** for better testability:
 
 ```
 src/
 ├── logic/           # Pure business logic (no React dependencies)
-│   ├── formula/     # Formula parsing: tokenizer, parser, LaTeX conversion
-│   ├── proof/       # Proof systems: types, NaturalDeduction
-│   └── truthTable/  # Truth table generation
 ├── components/      # React UI components
 ├── pages/           # Page-level React components
+├── hooks/           # Custom React hooks
 ├── context/         # React context providers
-└── i18n/            # Internationalization
+└── utils/           # Utility functions
 ```
 
-### Core Components
-- **Formula Parser** (`src/logic/formula/`): Tokenizes logic formulas → AST → LaTeX (rendered via KaTeX)
-- **Proof Systems** (`src/logic/proof/`): Strategy pattern for Natural Deduction rules. Add new proof systems by implementing `ProofSystem` interface in `src/logic/proof/types.ts`
-- **Truth Table** (`src/logic/truthTable/`): Generates truth tables from formulas
-- **Pages**: `HomePage` (formula input), `TruthTablePage`, `ProofAssistantPage`
-
-### i18n Pattern (CRITICAL)
-**All user-visible strings must use translation keys** - the pre-commit hook will block commits with hardcoded strings.
-
-```tsx
-// ✅ Correct
-const { t } = useTranslation()
-<Button>{t('apply')}</Button>
-title={t('backToHome')}
-
-// ❌ Wrong - will fail pre-commit
-<Button>Apply</Button>
-title="Back to home"
-```
-
-For non-React code (like `NaturalDeduction.ts`), use `nameKey`/`descriptionKey` properties that are resolved via `t()` in UI components:
-```typescript
-// In NaturalDeduction.ts
-{ id: 'mp', nameKey: 'ruleModusPonens', descriptionKey: 'ruleModusPonensDesc' }
-
-// In component
-{t(rule.nameKey)}
-```
-
-Translation files: `src/i18n/locales/en.json` and `pt-BR.json` - **must have identical keys**.
-
-## Pre-Commit Quality Gates
-The hook (`.husky/pre-commit.cjs`) runs 5 checks - all must pass:
-
-1. **ESLint** - `npm run lint` must pass with no violations (includes `no-magic-numbers` and `i18next/no-literal-string` rules)
-2. **Tests + Coverage** - `vitest --coverage` must pass with ≥80% statement coverage
-3. **Duplication** - ≤1% code duplication (jscpd)
-4. **Hardcoded Strings** - No untranslated text in JSX + translation file key sync check
-5. **Build** - `npm run build` must succeed
-
-Run manually: `node .husky/pre-commit.cjs`
-
-## Available Proof Rules
-The Natural Deduction system (`src/logic/proof/NaturalDeduction.ts`) includes:
-
-| Rule | ID | Description |
-|------|----|-------------|
-| Assume | `assume` | Start an assumption (subproof) |
-| Modus Ponens | `mp` | From P and P→Q, derive Q |
-| Modus Tollens | `mt` | From P→Q and ¬Q, derive ¬P |
-| ∧ Introduction | `and_intro` | From P and Q, derive P∧Q |
-| ∧ Elimination (L/R) | `and_elim_left`, `and_elim_right` | From P∧Q, derive P or Q |
-| ∨ Introduction (L/R) | `or_intro_left`, `or_intro_right` | From P, derive P∨Q |
-| ∨ Elimination | `or_elim` | Proof by cases: from P∨Q, start branches assuming P and Q |
-| Double Negation | `double_neg` | From ¬¬P, derive P |
-| → Introduction | `impl_intro` | Close assumption: if assumed P and derived Q, conclude P→Q |
-
-## Key Commands
-```bash
-npm run dev          # Start dev server (localhost:5173/easy-logic/)
-npm test             # Run tests once
-npm run test:ui      # Vitest UI for debugging
-npm run test:coverage # Coverage report
-```
+**Key principle:** Logic in `logic/` should be framework-agnostic and testable without React.
 
 ## Testing Patterns
+
 - Tests colocated with source: `Component.tsx` → `Component.test.tsx`
 - Use `@testing-library/react` with `vitest`
-- Mock i18n is configured in `src/test.setup.ts`
+- Test configuration in `src/test.setup.ts`
+- Minimum 80% coverage required
 
-## Formula Syntax
-Operators: `^` (AND), `|` (OR), `~` (NOT), `->` (IMPLIES), `<->` (IFF), `T`/`F` (constants)
+## Key Commands
+
+```bash
+npm run dev           # Start dev server
+npm test              # Run tests once
+npm run test:ui       # Vitest UI for debugging
+npm run test:coverage # Coverage report (must be ≥80%)
+npm run lint          # Check code quality
+npm run lint:fix      # Auto-fix lint issues
+npm run build         # Build for production
+```
 
 ## Adding New Features
 
 ### TDD Workflow (MANDATORY)
+
 **For ANY new feature or bug fix:**
 
 1. **Write failing test(s)** - Cover expected behavior and edge cases
 2. **Run tests** - Confirm they fail with `npm test`
 3. **Implement minimal solution** - Make tests pass
-4. **Run tests again** - Verify all pass with `npm test`
+4. **Run tests again** - Verify all pass
 5. **Refactor** - Improve code quality while keeping tests green
 6. **Verify coverage** - Check with `npm run test:coverage` (must be ≥80%)
 7. **Commit** - Pre-commit hooks will verify everything
 
-**Never skip step 1 or 2** - Implementing before seeing tests fail breaks the TDD cycle and risks shipping broken code.
+**Never skip step 1 or 2** - Implementing before seeing tests fail breaks the TDD cycle.
 
-### New Translation Key
-1. Add to both `en.json` and `pt-BR.json` (same key, translated value)
-2. Use via `t('keyName')` in component
+## Common Patterns
 
-### New Proof Rule (TDD Required)
-1. **Write tests** - Test rule application, error cases, formula generation
-2. **Run tests** - Verify they fail
-3. Add rule object to `NaturalDeduction.ts` with `nameKey`/`descriptionKey`
-4. Add translation keys to both locale files
-5. Implement logic in `applyRule()` switch statement
-6. **Verify tests pass** - Run `npm test`
+### Custom Hooks
 
-### New Knowledge Base
-Add to `knowledgeBases` array in `NaturalDeduction.ts` with `nameKey`, `descriptionKey`, premises, and `suggestedGoals` (each goal needs `labelKey`/`descriptionKey`).
+```typescript
+// ✅ Good: Single responsibility
+export function useFeature() {
+  const [state, setState] = useState<FeatureState>(initialState)
+  
+  const handleAction = useCallback((input: string) => {
+    // Business logic here
+    setState(newState)
+  }, [])
+  
+  return { state, handleAction }
+}
+```
+
+### Component Structure
+
+```typescript
+// ✅ Good: Clean separation
+interface Props {
+  data: DataType
+  onAction: (id: string) => void
+}
+
+export function Component({ data, onAction }: Props) {
+  // Presentation logic only
+  return <div>{/* JSX */}</div>
+}
+```
+
+## Code Review Checklist
+
+Before committing, verify:
+
+- [ ] Tests written first (TDD)
+- [ ] All tests pass
+- [ ] Coverage ≥80%
+- [ ] No magic numbers
+- [ ] High cohesion, low coupling
+- [ ] Single responsibility per module
+- [ ] No secrets in code
+- [ ] ESLint passes
+- [ ] TypeScript has no errors
+- [ ] Build succeeds
+
+## AI Assistant Guidelines
+
+When helping with this project:
+
+1. **Always follow TDD** - Write tests first, then implementation
+2. **Preserve quality standards** - Never lower thresholds or disable checks
+3. **Maintain separation of concerns** - Keep business logic separate from UI
+4. **Use named constants** - No magic numbers
+5. **Test everything** - Minimum 80% coverage is required
+6. **Keep modules focused** - One responsibility per file
+7. **Document decisions** - Explain non-obvious code choices
+
+## Success Criteria
+
+Code is ready to commit when:
+
+- ✅ All tests pass
+- ✅ Coverage is ≥80%
+- ✅ No ESLint violations
+- ✅ No TypeScript errors
+- ✅ Build succeeds
+- ✅ No code duplication >1%
+- ✅ No secrets detected
+- ✅ Follows high cohesion, low coupling principle
+- ✅ Written using TDD approach

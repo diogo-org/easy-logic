@@ -1,0 +1,109 @@
+name: Build
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linter
+        run: npm run lint
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Build
+        run: npm run build
+      
+      - name: Configure Git
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Get version from package.json
+        if: github.ref == 'refs/heads/main'
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Package version: $VERSION"
+      
+      - name: Validate version format
+        if: github.ref == 'refs/heads/main'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Check if version contains prerelease identifiers (e.g., -alpha, -beta, -rc)
+          if [[ "$VERSION" =~ - ]]; then
+            echo "Error: Prerelease versions are not allowed on main branch"
+            echo "Current version: $VERSION"
+            exit 1
+          fi
+          
+          echo "Version validation passed"
+      
+      - name: Check if tag exists
+        if: github.ref == 'refs/heads/main'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Fetch all tags
+          git fetch --tags
+          
+          # Check if tag already exists
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Error: Tag $VERSION already exists"
+            echo "Please update the version in package.json"
+            exit 1
+          fi
+          
+          echo "Tag $VERSION does not exist, proceeding..."
+      
+      - name: Create and push tag
+        if: github.ref == 'refs/heads/main'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          git tag "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+      
+      - name: Generate artifact checksum
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "Generating SHA256 checksums for dist/ contents..."
+          cd dist
+          sha256sum * > ../dist-checksums.txt
+          cd ..
+          echo "Checksums generated:"
+          cat dist-checksums.txt
+      
+      - name: Upload build artifacts
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: |
+            dist/
+            dist-checksums.txt
+          retention-days: 1

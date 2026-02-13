@@ -1244,4 +1244,362 @@ describe('NaturalDeduction', () => {
       })
     })
   })
+
+  describe('applyRule error handling', () => {
+    it('returns null for assume without user input', () => {
+      const state: ProofState = {
+        goal: 'p',
+        premises: [],
+        steps: [],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [1],
+        isComplete: false,
+      }
+
+      const assumeRule = nd.getRules().find((r) => r.id === 'assume')!
+      const result = nd.applyRule(assumeRule, state, [], undefined)
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for mp with wrong number of steps', () => {
+      const state: ProofState = {
+        goal: 'q',
+        premises: ['p', 'p -> q'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: 'p -> q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [3],
+        isComplete: false,
+      }
+
+      const mpRule = nd.getRules().find((r) => r.id === 'mp')!
+      const result = nd.applyRule(mpRule, state, [1]) // Only one step instead of two
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for mp with non-existent step ids', () => {
+      const state: ProofState = {
+        goal: 'q',
+        premises: ['p', 'p -> q'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: 'p -> q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [3],
+        isComplete: false,
+      }
+
+      const mpRule = nd.getRules().find((r) => r.id === 'mp')!
+      const result = nd.applyRule(mpRule, state, [1, 999]) // Second id doesn't exist
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for mp with non-implication formula', () => {
+      const state: ProofState = {
+        goal: 'q',
+        premises: ['p', 'q'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: 'q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [3],
+        isComplete: false,
+      }
+
+      const mpRule = nd.getRules().find((r) => r.id === 'mp')!
+      const result = nd.applyRule(mpRule, state, [1, 2]) // Second is not an implication
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for and_elim_left on non-conjunction', () => {
+      const state: ProofState = {
+        goal: 'p',
+        premises: ['p | q'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'and_elim_left')!
+      const result = nd.applyRule(rule, state, [1])
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for and_elim_right on non-conjunction', () => {
+      const state: ProofState = {
+        goal: 'q',
+        premises: ['p | q'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'and_elim_right')!
+      const result = nd.applyRule(rule, state, [1])
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for double_neg on non-negation', () => {
+      const state: ProofState = {
+        goal: 'p',
+        premises: ['p'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'double_neg')!
+      const result = nd.applyRule(rule, state, [1])
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for double_neg on single negation', () => {
+      const state: ProofState = {
+        goal: 'p',
+        premises: ['~p'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: '~p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'double_neg')!
+      const result = nd.applyRule(rule, state, [1])
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for or_intro_left without user input', () => {
+      const state: ProofState = {
+        goal: 'p | q',
+        premises: ['p'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'or_intro_left')!
+      const result = nd.applyRule(rule, state, [1], undefined) // No user input
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for or_intro_right without user input', () => {
+      const state: ProofState = {
+        goal: 'p | q',
+        premises: ['q'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'or_intro_right')!
+      const result = nd.applyRule(rule, state, [1], undefined) // No user input
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for lem without user input', () => {
+      const state: ProofState = {
+        goal: 'p | ~p',
+        premises: [],
+        steps: [],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [1],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'lem')!
+      const result = nd.applyRule(rule, state, [], undefined) // No user input
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for lem with empty user input', () => {
+      const state: ProofState = {
+        goal: 'p | ~p',
+        premises: [],
+        steps: [],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [1],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'lem')!
+      const result = nd.applyRule(rule, state, [], '   ') // Empty/whitespace user input
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for impl_intro without open assumption', () => {
+      const state: ProofState = {
+        goal: 'p -> q',
+        premises: [],
+        steps: [],
+        currentDepth: 0, // No open assumption
+        currentSubproofId: '',
+        nextStepInSubproof: [1],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'impl_intro')!
+      const result = nd.applyRule(rule, state, [])
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for or_elim on non-disjunction', () => {
+      const state: ProofState = {
+        goal: 'p',
+        premises: ['p ^ q'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p ^ q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'or_elim')!
+      const result = nd.applyRule(rule, state, [1])
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for disj_syl with non-two-steps', () => {
+      const state: ProofState = {
+        goal: 'q',
+        premises: ['p | q', '~p'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: '~p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [3],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'disj_syl')!
+      const result = nd.applyRule(rule, state, [1]) // Only one step
+
+      expect(result).toBeNull()
+    })
+
+    it('handles rule application with unknown rule id', () => {
+      const state: ProofState = {
+        goal: 'p',
+        premises: [],
+        steps: [],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [1],
+        isComplete: false,
+      }
+
+      // Create a fake rule with unknown id
+      const fakeRule = { id: 'unknown_rule', nameKey: 'test', category: 'basic' as const, requiredSteps: 0, descriptionKey: 'test' }
+      const result = nd.applyRule(fakeRule, state, [])
+
+      expect(result).toBeNull()
+    })
+
+    it('applies lem successfully with simple formula', () => {
+      const state: ProofState = {
+        goal: 'p | ~p',
+        premises: [],
+        steps: [],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [1],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'lem')!
+      const result = nd.applyRule(rule, state, [], 'p')
+
+      expect(result).not.toBeNull()
+      expect(result?.formula).toBe('p | ~p')
+    })
+
+    it('applies lem with formula that needs parentheses', () => {
+      const state: ProofState = {
+        goal: '(p ^ q) | ~(p ^ q)',
+        premises: [],
+        steps: [],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [1],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'lem')!
+      const result = nd.applyRule(rule, state, [], 'p ^ q')
+
+      expect(result).not.toBeNull()
+      expect(result?.formula).toContain('|')
+      expect(result?.formula).toContain('~')
+    })
+
+    it('returns null for mt with non-implication', () => {
+      const state: ProofState = {
+        goal: '~p',
+        premises: ['p', '~q'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: '~q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [3],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'mt')!
+      const result = nd.applyRule(rule, state, [1, 2])
+
+      expect(result).toBeNull()
+    })
+  })
 })
