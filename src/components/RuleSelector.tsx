@@ -16,6 +16,7 @@ import {
   useMediaQuery,
   useTheme,
   Tooltip,
+  FormHelperText,
 } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { ApplicableRule } from '../logic/proof'
@@ -141,13 +142,21 @@ export default function RuleSelector({ rules, onRuleSelect, disabled = false }: 
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
             placeholder={t('formulaInputPlaceholder')}
+            error={!userInput.trim() && userInput !== ''}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && userInput.trim()) {
                 handleConfirm()
               }
             }}
             sx={{ mt: 2 }}
+            aria-describedby="input-helper-text"
           />
+
+          <FormHelperText id="input-helper-text" sx={{ mt: 1 }}>
+            {!userInput.trim()
+              ? t('enterFormulaToApply') || 'Enter a formula above to enable the Apply button'
+              : t('pressEnterToApply') || 'Press Enter or click Apply to continue'}
+          </FormHelperText>
 
           <Box sx={{ mt: 2 }}>
             <Typography variant="caption" color="text.secondary">
@@ -164,9 +173,26 @@ export default function RuleSelector({ rules, onRuleSelect, disabled = false }: 
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCancel}>{t('cancel')}</Button>
-          <Button onClick={handleConfirm} variant="contained" disabled={!userInput.trim()}>
-            {t('apply')}
-          </Button>
+          <Tooltip
+            title={
+              !userInput.trim()
+                ? t('applyDisabledTooltip') || 'Enter a formula to continue'
+                : ''
+            }
+            disableHoverListener={userInput.trim() !== ''}
+          >
+            <span>
+              <Button
+                onClick={handleConfirm}
+                variant="contained"
+                disabled={!userInput.trim()}
+                aria-disabled={!userInput.trim()}
+                aria-describedby="input-helper-text"
+              >
+                {t('apply')}
+              </Button>
+            </span>
+          </Tooltip>
         </DialogActions>
       </Dialog>
     </Box>

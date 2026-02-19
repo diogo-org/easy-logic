@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { FormulaInput } from './FormulaInput'
 
@@ -151,8 +151,7 @@ describe('FormulaInput', () => {
     
     await userEvent.click(clearButton)
     
-    const clearedButton = screen.queryByRole('button', { name: /clear/i })
-    expect(clearedButton).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /clear/i })).not.toBeInTheDocument()
   })
 
   it('should have proper ARIA label on clear button', async () => {
@@ -177,5 +176,57 @@ describe('FormulaInput', () => {
     await userEvent.click(clearButton)
     
     expect(mockSubmit).not.toHaveBeenCalled()
+  })
+
+  it('should display error message when submitting empty input', async () => {
+    const mockSubmit = vi.fn()
+    render(<FormulaInput onSubmit={mockSubmit} />)
+    
+    const input = screen.getByRole('textbox')
+    await userEvent.type(input, '{Enter}')
+    
+    const errorMessage = await screen.findByText(/please enter a formula/i)
+    expect(errorMessage).toBeInTheDocument()
+  })
+
+  it('should display error message when submitting whitespace-only input', async () => {
+    const mockSubmit = vi.fn()
+    render(<FormulaInput onSubmit={mockSubmit} />)
+    
+    const input = screen.getByRole('textbox')
+    await userEvent.type(input, '   {Enter}')
+    
+    const errorMessage = await screen.findByText(/please enter a formula/i)
+    expect(errorMessage).toBeInTheDocument()
+  })
+
+  it('should dismiss error message when user starts typing', async () => {
+    const mockSubmit = vi.fn()
+    render(<FormulaInput onSubmit={mockSubmit} />)
+    
+    const input = screen.getByRole('textbox')
+    await userEvent.type(input, '{Enter}')
+    
+    const errorMessage = await screen.findByText(/please enter a formula/i)
+    expect(errorMessage).toBeInTheDocument()
+    
+    await userEvent.type(input, 'p')
+    
+    // Wait for the error message to be removed (Snackbar has exit animation)
+    await waitFor(() => {
+      const dismissedError = screen.queryByText(/please enter a formula/i)
+      expect(dismissedError).not.toBeInTheDocument()
+    })
+  })
+
+  it('should not display error message on successful submission', async () => {
+    const mockSubmit = vi.fn()
+    render(<FormulaInput onSubmit={mockSubmit} />)
+    
+    const input = screen.getByRole('textbox')
+    await userEvent.type(input, 'p ^ q{Enter}')
+    
+    const errorMessage = screen.queryByText(/please enter a formula/i)
+    expect(errorMessage).not.toBeInTheDocument()
   })
 })

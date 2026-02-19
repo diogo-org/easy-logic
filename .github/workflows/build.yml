@@ -98,7 +98,7 @@ jobs:
         run: |
           echo "Generating SHA256 checksums for dist/ contents..."
           cd dist
-          sha256sum * > ../dist-checksums.txt
+          find . -type f -exec sha256sum {} + | sort > ../dist-checksums.txt
           cd ..
           echo "Checksums generated:"
           cat dist-checksums.txt

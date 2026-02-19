@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Pagination } from '@mui/material'
 import { TruthTableRow } from '../logic/truthTable'
 import './TruthTable.css'
 
@@ -12,20 +13,26 @@ const ROWS_PER_PAGE = 10
 
 export function TruthTable({ variables, rows }: TruthTableProps) {
   const { t } = useTranslation()
-  const [currentPage, setCurrentPage] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
 
   const totalPages = Math.ceil(rows.length / ROWS_PER_PAGE)
-  const startIdx = currentPage * ROWS_PER_PAGE
+  const startIdx = (currentPage - 1) * ROWS_PER_PAGE
   const endIdx = Math.min(startIdx + ROWS_PER_PAGE, rows.length)
   const pageRows = rows.slice(startIdx, endIdx)
 
-  const handlePrevious = () => {
-    setCurrentPage(Math.max(0, currentPage - 1))
-  }
+  const handlePageChange = useCallback((_event: React.ChangeEvent<unknown>, page: number) => {
+    setCurrentPage(page)
+  }, [])
 
-  const handleNext = () => {
-    setCurrentPage(Math.min(totalPages - 1, currentPage + 1))
-  }
+  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ArrowRight' && currentPage < totalPages) {
+      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+      event.preventDefault()
+    } else if (event.key === 'ArrowLeft' && currentPage > 1) {
+      setCurrentPage((prev) => Math.max(prev - 1, 1))
+      event.preventDefault()
+    }
+  }, [currentPage, totalPages])
 
   return (
     <div className="truth-table-container">
@@ -33,8 +40,8 @@ export function TruthTable({ variables, rows }: TruthTableProps) {
         <h2>{t('truthTable')}</h2>
       </div>
 
-      <div className="truth-table-wrapper">
-        <table className="truth-table">
+      <div className="truth-table-wrapper" onKeyDown={handleKeyDown} tabIndex={0}>
+        <table className="truth-table" role="table">
           <thead>
             <tr>
               {variables.map((variable) => (
@@ -62,25 +69,20 @@ export function TruthTable({ variables, rows }: TruthTableProps) {
         </table>
       </div>
 
-      <div className="pagination">
-        <button
-          className="pagination-button"
-          onClick={handlePrevious}
-          disabled={currentPage === 0}
-        >
-          {t('previous')}
-        </button>
-        <span className="pagination-info">
-          {t('pageOf', { current: currentPage + 1, total: totalPages })}
-        </span>
-        <button
-          className="pagination-button"
-          onClick={handleNext}
-          disabled={currentPage === totalPages - 1}
-        >
-          {t('next')}
-        </button>
-      </div>
+      {totalPages > 1 && (
+        <div className="pagination-container">
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={handlePageChange}
+            color="primary"
+            shape="rounded"
+            size="medium"
+            className="pagination"
+            aria-label="table pagination"
+          />
+        </div>
+      )}
     </div>
   )
 }

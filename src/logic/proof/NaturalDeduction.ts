@@ -313,18 +313,10 @@ export class NaturalDeduction implements ProofSystem {
           
           if (!assumption || !conclusion || conclusion.depth !== state.currentDepth) return null
 
-          // Line number goes back to parent depth
-          const parentDepthSteps = state.steps.filter(s => s.depth === state.currentDepth - 1)
-          let lineNumber: string
-          if (parentDepthSteps.length > 0) {
-            const lastParent = parentDepthSteps[parentDepthSteps.length - 1]
-            const parts = lastParent.lineNumber.split('.')
-            const lastPart = parseInt(parts[parts.length - 1], 10)
-            parts[parts.length - 1] = String(lastPart + 1)
-            lineNumber = parts.join('.')
-          } else {
-            lineNumber = String(state.steps.length + 1)
-          }
+          // Line number goes back to parent depth by incrementing from assumption's line number
+          // This ensures proper numbering after the subproof block
+          const assumptionLineNum = parseInt(assumption.lineNumber, 10)
+          const lineNumber = String(assumptionLineNum + 1)
 
           return {
             id: newId,
@@ -442,7 +434,8 @@ export class NaturalDeduction implements ProofSystem {
       
       // Check if negatedFormula matches the consequent
       if (normalizeFormula(negatedFormula) === normalizeFormula(impl.consequent)) {
-        return `~${impl.antecedent}`
+        // Wrap antecedent in parentheses to preserve formula structure when negating
+        return `~(${impl.antecedent})`
       }
       return null
     } catch {

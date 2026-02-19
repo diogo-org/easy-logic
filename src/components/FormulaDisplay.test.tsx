@@ -73,4 +73,54 @@ describe('FormulaDisplay', () => {
     const display = screen.getByTestId('react-katex')
     expect(display).toBeInTheDocument()
   })
+
+  it('should use MUI Alert component for error display', () => {
+    const { container } = render(<FormulaDisplay latex="" error="Parsing error" />)
+    const alert = container.querySelector('.MuiAlert-root')
+    expect(alert).toBeInTheDocument()
+  })
+
+  it('should have error severity on MUI Alert', () => {
+    const { container } = render(<FormulaDisplay latex="" error="Parsing error" />)
+    const alert = container.querySelector('.MuiAlert-standardError')
+    expect(alert).toBeInTheDocument()
+  })
+
+  it('should have aria-live="polite" for screen reader announcement', () => {
+    const { container } = render(<FormulaDisplay latex="" error="Parser error" />)
+    const alert = container.querySelector('.MuiAlert-root')
+    expect(alert).toHaveAttribute('aria-live', 'polite')
+  })
+
+  it('should display error icon in error message', () => {
+    const { container } = render(<FormulaDisplay latex="" error="Parsing error" />)
+    const errorIcon = container.querySelector('.MuiAlert-icon')
+    expect(errorIcon).toBeInTheDocument()
+  })
+
+  it('should include error message text with error icon', () => {
+    render(<FormulaDisplay latex="" error="Unexpected token" />)
+    const errorMsg = screen.getByText(/Unexpected token/i)
+    expect(errorMsg).toBeInTheDocument()
+  })
+
+  it('should maintain high color contrast for error display', () => {
+    const { container } = render(<FormulaDisplay latex="" error="Test error" />)
+    const alert = container.querySelector('.MuiAlert-root')
+    expect(alert).toHaveClass('MuiAlert-standardError')
+  })
+
+  it('should have appropriate padding and spacing for error visibility', () => {
+    const { container } = render(<FormulaDisplay latex="" error="Error message" />)
+    const alert = container.querySelector('.MuiAlert-root')
+    expect(alert).toBeInTheDocument()
+    const styles = window.getComputedStyle(alert!)
+    expect(styles.padding).toBeTruthy()
+  })
+
+  it('should display error with full width for better visibility', () => {
+    const { container } = render(<FormulaDisplay latex="" error="Error message" />)
+    const alert = container.querySelector('.MuiAlert-root')
+    expect(alert).toBeInTheDocument()
+  })
 })

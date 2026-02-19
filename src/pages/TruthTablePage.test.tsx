@@ -143,7 +143,9 @@ describe('TruthTablePage', () => {
       </MemoryRouter>
     )
 
-    expect(screen.getByText(/Page 1 of 2/)).toBeInTheDocument()
+    // 4 variables = 2^4 = 16 rows, which requires pagination (10 rows per page)
+    expect(screen.getByLabelText('table pagination')).toBeInTheDocument()
+    expect(screen.getByLabelText('Go to page 2')).toBeInTheDocument()
   })
 
   it('handles formula with single variable', () => {
