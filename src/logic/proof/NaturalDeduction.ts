@@ -39,7 +39,11 @@ export class NaturalDeduction implements ProofSystem {
 
     // Implication introduction only works if we have an open assumption
     if (rule.id === 'impl_intro') {
-      const hasOpenAssumption = state.currentDepth > 0
+      const hasOpenAssumptionAtDepth = state.currentDepth > 0 &&
+        state.steps.some((step) => step.depth === state.currentDepth && step.ruleKey === RULE_KEYS.ASSUME)
+      const lastStep = state.steps[state.steps.length - 1]
+      const hasConclusionAtCurrentDepth = Boolean(lastStep && lastStep.depth === state.currentDepth)
+      const hasOpenAssumption = hasOpenAssumptionAtDepth && hasConclusionAtCurrentDepth
       return {
         ...rule,
         applicable: hasOpenAssumption,
@@ -306,17 +310,36 @@ export class NaturalDeduction implements ProofSystem {
         case 'impl_intro': {
           // Close the current assumption
           if (state.currentDepth === 0) {return null}
-          
-          // Find the assumption at current depth and the conclusion
-          const assumption = state.steps.find(s => s.depth === state.currentDepth && s.ruleKey === RULE_KEYS.ASSUME)
-          const conclusion = state.steps.length > 0 ? state.steps[state.steps.length - 1] : null
-          
-          if (!assumption || !conclusion || conclusion.depth !== state.currentDepth) {return null}
 
-          // Line number goes back to parent depth by incrementing from assumption's line number
-          // This ensures proper numbering after the subproof block
-          const assumptionLineNum = parseInt(assumption.lineNumber, 10)
-          const lineNumber = String(assumptionLineNum + 1)
+          const closedAssumptionIds = new Set(
+            state.steps
+              .filter((step) => step.ruleKey === RULE_KEYS.IMPL_INTRO && step.dependencies.length >= 1)
+              .map((step) => step.dependencies[0])
+          )
+          
+          // Find the first open assumption at current depth (it should be marked as isSubproofStart)
+          const assumption = state.steps.find(
+            (step) =>
+              step.depth === state.currentDepth &&
+              step.ruleKey === RULE_KEYS.ASSUME &&
+              !closedAssumptionIds.has(step.id)
+          )
+          
+          // The conclusion is the last step at current depth
+          const conclusion = [...state.steps]
+            .reverse()
+            .find((step) => step.depth === state.currentDepth)
+          
+          if (!assumption || !conclusion) {return null}
+
+          // Compute line number by incrementing the last segment of assumption's line number
+          // Examples: '1' -> '2', '1.1' -> '1.2', '2.3' -> '2.4'
+          const lineParts = assumption.lineNumber.split('.')
+          const lastPartIndex = lineParts.length - 1
+          const lastPart = parseInt(lineParts[lastPartIndex], 10)
+          if (Number.isNaN(lastPart)) {return null}
+          lineParts[lastPartIndex] = String(lastPart + 1)
+          const lineNumber = lineParts.join('.')
 
           return {
             id: newId,

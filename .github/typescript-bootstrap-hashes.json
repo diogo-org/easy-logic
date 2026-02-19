@@ -1,7 +1,7 @@
 {
   "version": 1,
   "algorithm": "sha256",
-  "generatedAt": "2026-02-19T19:39:50.096Z",
+  "generatedAt": "2026-02-19T21:09:00.000Z",
   "managedFiles": [
     ".github/copilot-instructions.md",
     ".github/PULL_REQUEST_TEMPLATE.md",
@@ -43,7 +43,7 @@
     ".vscode/settings.json": "5bbfc47f9dd0b8ac6b42cfe4805ae95b677543e6cd444cd6ffb8b5fa6ed64ae0",
     "eslint.config.js": "f7a27eb0ac76da2e8a85b0aa99b45968c65b55b1d8156a6550f214f5705241e9",
     "index.html": "592f6f45acd776012077d54a885f6baa8b4b6c2d0f1ab1fbd6aec4fb4327250b",
-    "package.json": "cf539a3f75b758326b59fbf885baf36528ce1322fcc40ff724c386f4cdd21fb5",
+    "package.json": "32a07b711b20e52040e81dad0a55d0a6f53c8df34953aad9129ee944ea4e90de",
     "README.md": "74bf94b5ffe68ca22ea6a3dc23786bc06a6a697424fab1b2710ae86d2a0dd18a",
     "scripts/postinstall.cjs": "e6fba77543ccb6cd4ad90853a30cef54db07985fcb9b7628785cf6c002b9580e",
     "scripts/postinstall.test.ts": "998e1c563d890bce84caf9b685993af2e84526231858f096d34b9978a42401f7",

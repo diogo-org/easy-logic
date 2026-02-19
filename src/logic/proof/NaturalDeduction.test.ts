@@ -88,6 +88,34 @@ describe('NaturalDeduction', () => {
 
       expect(result.applicable).toBe(true)
     })
+
+    it('marks implication intro as not applicable when depth is open but no assumption exists at current depth', () => {
+      const state: ProofState = {
+        goal: 'p -> p',
+        premises: [],
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: 'p',
+            ruleKey: RULE_KEYS.PREMISE,
+            dependencies: [],
+            justificationKey: 'justificationPremise',
+            depth: 0,
+          },
+        ],
+        currentDepth: 1,
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+
+      const implIntroRule = nd.getRules().find((r) => r.id === 'impl_intro')!
+      const result = nd.checkApplicability(implIntroRule, state)
+
+      expect(result.applicable).toBe(false)
+      expect(result.reason).toBe('No open assumption to close')
+    })
   })
 
   describe('applyRule', () => {
@@ -362,6 +390,115 @@ describe('NaturalDeduction', () => {
       expect(result?.ruleKey).toBe(RULE_KEYS.IMPL_INTRO)
       expect(result?.depth).toBe(0)
       expect(result?.isSubproofEnd).toBe(true)
+    })
+
+    it('closes the latest open assumption when there are previous closed assumptions at the same depth', () => {
+      const state: ProofState = {
+        goal: 'q -> q',
+        premises: [],
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: 'p',
+            ruleKey: RULE_KEYS.ASSUME,
+            dependencies: [],
+            justificationKey: 'justificationAssumption',
+            depth: 1,
+            isSubproofStart: true,
+          },
+          {
+            id: 2,
+            lineNumber: '2',
+            formula: '(p) -> (p)',
+            ruleKey: RULE_KEYS.IMPL_INTRO,
+            dependencies: [1, 1],
+            justificationKey: 'justificationImplIntro',
+            depth: 0,
+            isSubproofEnd: true,
+          },
+          {
+            id: 3,
+            lineNumber: '3',
+            formula: 'r',
+            ruleKey: RULE_KEYS.PREMISE,
+            dependencies: [],
+            justificationKey: 'justificationPremise',
+            depth: 0,
+          },
+          {
+            id: 4,
+            lineNumber: '4',
+            formula: 'q',
+            ruleKey: RULE_KEYS.ASSUME,
+            dependencies: [],
+            justificationKey: 'justificationAssumption',
+            depth: 1,
+            isSubproofStart: true,
+          },
+          {
+            id: 5,
+            lineNumber: '4.1',
+            formula: 'q',
+            ruleKey: RULE_KEYS.PREMISE,
+            dependencies: [],
+            justificationKey: 'justificationPremise',
+            depth: 1,
+          },
+        ],
+        currentDepth: 1,
+        currentSubproofId: '',
+        nextStepInSubproof: [6],
+        isComplete: false,
+      }
+
+      const implIntroRule = nd.getRules().find((r) => r.id === 'impl_intro')!
+      const result = nd.applyRule(implIntroRule, state, [])
+
+      expect(result).not.toBeNull()
+      expect(result?.formula).toBe('(q) -> (q)')
+      expect(result?.dependencies).toEqual([4, 5])
+      expect(result?.lineNumber).toBe('5')
+    })
+
+    it('uses hierarchical numbering when closing nested subproofs', () => {
+      const state: ProofState = {
+        goal: 'p -> (q -> q)',
+        premises: [],
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: 'p',
+            ruleKey: RULE_KEYS.ASSUME,
+            dependencies: [],
+            justificationKey: 'justificationAssumption',
+            depth: 1,
+            isSubproofStart: true,
+          },
+          {
+            id: 2,
+            lineNumber: '1.1',
+            formula: 'q',
+            ruleKey: RULE_KEYS.ASSUME,
+            dependencies: [],
+            justificationKey: 'justificationAssumption',
+            depth: 2,
+            isSubproofStart: true,
+          },
+        ],
+        currentDepth: 2,
+        currentSubproofId: '',
+        nextStepInSubproof: [3],
+        isComplete: false,
+      }
+
+      const implIntroRule = nd.getRules().find((r) => r.id === 'impl_intro')!
+      const result = nd.applyRule(implIntroRule, state, [])
+
+      expect(result).not.toBeNull()
+      expect(result?.lineNumber).toBe('1.2')
+      expect(result?.depth).toBe(1)
     })
 
     it('applies modus tollens', () => {
