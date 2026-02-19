@@ -19,6 +19,23 @@ export default tseslint.config(
         ignoreDefaultValues: true,
         enforceConst: true,
       }],
+      // Enforce consistent, readable code patterns
+      'no-duplicate-imports': 'error',
+      'no-var': 'error',
+      'eqeqeq': ['error', 'always'],
+      'no-else-return': 'error',
+      'no-unneeded-ternary': 'error',
+      'object-shorthand': 'error',
+      'curly': ['error', 'all'],
+      'no-lonely-if': 'error',
+      'no-negated-condition': 'error',
+      'no-useless-return': 'error',
+      'prefer-const': 'error',
+      'prefer-template': 'error',
+      'no-implicit-coercion': 'error',
+      'no-useless-concat': 'error',
+      'no-useless-call': 'error',
+      'no-throw-literal': 'error',
       
       // TypeScript-specific rules
       '@typescript-eslint/no-unused-vars': ['error', { 
