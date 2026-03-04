@@ -5,8 +5,8 @@ import { TruthTableRow } from '../logic/truthTable'
 import './TruthTable.css'
 
 interface TruthTableProps {
-  variables: string[]
-  rows: TruthTableRow[]
+  readonly variables: string[]
+  readonly rows: TruthTableRow[]
 }
 
 const ROWS_PER_PAGE = 10
@@ -40,7 +40,7 @@ export function TruthTable({ variables, rows }: TruthTableProps) {
         <h2>{t('truthTable')}</h2>
       </div>
 
-      <div className="truth-table-wrapper" onKeyDown={handleKeyDown} tabIndex={0}>
+      <div className="truth-table-wrapper" onKeyDown={handleKeyDown} role="region" aria-label="Truth Table" tabIndex={0}>
         <table className="truth-table" role="table">
           <thead>
             <tr>

@@ -62,8 +62,8 @@ export default function ProofAssistantPage() {
     navigate('/', { replace: true })
     // Fallback: if still on same page after delay, force reload
     setTimeout(() => {
-      if (window.location.pathname.includes('/proof-assistant')) {
-        window.location.href = import.meta.env.DEV ? '/' : '/easy-logic/'
+      if (globalThis.location.pathname.includes('/proof-assistant')) {
+        globalThis.location.href = import.meta.env.DEV ? '/' : '/easy-logic/'
       }
     }, NAVIGATION_FALLBACK_DELAY_MS)
   }

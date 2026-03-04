@@ -414,7 +414,7 @@ describe('ProofAssistantPage', () => {
     const user = userEvent.setup()
     renderComponent()
     
-    const customGoalInput = screen.getByLabelText(/Custom Goal/i) as HTMLInputElement
+    const customGoalInput = screen.getByLabelText(/Custom Goal/i)
     await user.type(customGoalInput, 'test formula')
     expect(customGoalInput.value).toBe('test formula')
     

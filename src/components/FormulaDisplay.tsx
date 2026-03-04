@@ -4,8 +4,8 @@ import { Alert } from '@mui/material'
 import 'katex/dist/katex.min.css'
 
 interface FormulaDisplayProps {
-  latex: string
-  error?: string
+  readonly latex: string
+  readonly error?: string
 }
 
 export function FormulaDisplay({ latex, error }: FormulaDisplayProps) {

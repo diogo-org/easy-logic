@@ -4,7 +4,7 @@ import { Button, Snackbar, Alert } from '@mui/material'
 import ClearIcon from '@mui/icons-material/Clear'
 
 interface FormulaInputProps {
-  onSubmit: (formula: string) => void
+  readonly onSubmit: (formula: string) => void
 }
 
 export function FormulaInput({ onSubmit }: FormulaInputProps) {
@@ -51,7 +51,7 @@ export function FormulaInput({ onSubmit }: FormulaInputProps) {
           type="text"
           value={input}
           onChange={handleInputChange}
-          onKeyPress={handleKeyPress}
+          
           placeholder={t('formulaPlaceholder')}
           className="formula-input"
         />

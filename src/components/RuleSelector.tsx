@@ -23,9 +23,9 @@ import { ApplicableRule } from '../logic/proof'
 import { LAYOUT } from '../constants/ui'
 
 interface RuleSelectorProps {
-  rules: ApplicableRule[]
-  onRuleSelect: (ruleId: string, userInput?: string) => void
-  disabled?: boolean
+  readonly rules: ApplicableRule[]
+  readonly onRuleSelect: (ruleId: string, userInput?: string) => void
+  readonly disabled?: boolean
 }
 
 export default function RuleSelector({ rules, onRuleSelect, disabled = false }: RuleSelectorProps) {

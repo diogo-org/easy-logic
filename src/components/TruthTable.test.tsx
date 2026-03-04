@@ -257,7 +257,7 @@ describe('TruthTable', () => {
     }))
 
     const { container } = render(<TruthTable variables={['A']} rows={manyRows} />)
-    const tableWrapper = container.querySelector('.truth-table-wrapper') as HTMLElement
+    const tableWrapper = container.querySelector('.truth-table-wrapper')
 
     // Focus and press right arrow to go to next page
     tableWrapper.focus()
@@ -300,8 +300,8 @@ describe('TruthTable', () => {
     }))
 
     const { container } = render(<TruthTable variables={['A']} rows={manyRows} />)
-    const selectedPageButton = container.querySelector('[aria-current="page"]') as HTMLElement
-    const otherPageButton = screen.getByLabelText('Go to page 2') as HTMLElement
+    const selectedPageButton = container.querySelector('[aria-current="page"]')
+    const otherPageButton = screen.getByLabelText('Go to page 2')
 
     expect(selectedPageButton).toBeInTheDocument()
     // The selected page should have aria-current="page" attribute
@@ -319,7 +319,7 @@ describe('TruthTable', () => {
     const { container } = render(<TruthTable variables={['A']} rows={manyRows} />)
     const selectedPageButton = container.querySelector(
       '.MuiPaginationItem-page.Mui-selected'
-    ) as HTMLElement
+    )
 
     expect(selectedPageButton).toBeInTheDocument()
     // Verify the selected button has the Mui-selected class for visual styling

@@ -13,8 +13,8 @@ import { formulaToString, isFullyParenthesized, parseImplication, normalizeFormu
 export class NaturalDeduction implements ProofSystem {
   name = 'Natural Deduction'
 
-  private knowledgeBases = knowledgeBases
-  private rules = naturalDeductionRules
+  private readonly knowledgeBases = knowledgeBases
+  private readonly rules = naturalDeductionRules
 
   getRules(): Rule[] {
     return this.rules
@@ -126,7 +126,7 @@ export class NaturalDeduction implements ProofSystem {
     if (lastStepAtDepth && lastStepAtDepth.lineNumber) {
       // Increment the last segment of the line number
       const parts = lastStepAtDepth.lineNumber.split('.')
-      const lastPart = parseInt(parts[parts.length - 1], 10)
+      const lastPart = Number.parseInt(parts[parts.length - 1], 10)
       parts[parts.length - 1] = String(lastPart + 1)
       return parts.join('.')
     }
@@ -336,7 +336,7 @@ export class NaturalDeduction implements ProofSystem {
           // Examples: '1' -> '2', '1.1' -> '1.2', '2.3' -> '2.4'
           const lineParts = assumption.lineNumber.split('.')
           const lastPartIndex = lineParts.length - 1
-          const lastPart = parseInt(lineParts[lastPartIndex], 10)
+          const lastPart = Number.parseInt(lineParts[lastPartIndex], 10)
           if (Number.isNaN(lastPart)) {return null}
           lineParts[lastPartIndex] = String(lastPart + 1)
           const lineNumber = lineParts.join('.')

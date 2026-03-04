@@ -8,7 +8,7 @@ describe('FormulaInput', () => {
     const mockSubmit = vi.fn()
     render(<FormulaInput onSubmit={mockSubmit} />)
     
-    const input = screen.getByRole('textbox') as HTMLInputElement
+    const input = screen.getByRole('textbox')
     expect(input).toBeInTheDocument()
     // Placeholder can be in English or Portuguese depending on i18n
     expect(input.placeholder).toMatch(/Example|Exemplo/i)
