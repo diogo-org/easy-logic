@@ -8,3 +8,5 @@ coverage/
 report/
 bugs/
 fixes/
+test-results/
+playwright-report/
