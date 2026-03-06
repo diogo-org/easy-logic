@@ -83,6 +83,7 @@
   "categoryBasic": "Regras Básicas",
   "categoryIntroduction": "Introdução",
   "categoryElimination": "Eliminação",
+  "categoryDerived": "Regras Derivadas",
   "couldNotApplyRule": "Não foi possível aplicar esta regra. Verifique sua seleção.",
   "errorApplyingRule": "Erro ao aplicar regra. Por favor, tente novamente.",
   "notOperator": "~ (não)",

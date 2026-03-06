@@ -72,6 +72,7 @@ export default function RuleSelector({ rules, onRuleSelect, disabled = false }: 
     { id: 'basic', label: t('categoryBasic') },
     { id: 'introduction', label: t('categoryIntroduction') },
     { id: 'elimination', label: t('categoryElimination') },
+    { id: 'derived', label: t('categoryDerived') },
   ]
 
   return (

@@ -83,6 +83,7 @@
   "categoryBasic": "Basic Rules",
   "categoryIntroduction": "Introduction",
   "categoryElimination": "Elimination",
+  "categoryDerived": "Derived Rules",
   "couldNotApplyRule": "Could not apply this rule. Please check your selection.",
   "errorApplyingRule": "Error applying rule. Please try again.",
   "notOperator": "~ (not)",
