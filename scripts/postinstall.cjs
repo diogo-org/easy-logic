@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
-const { pathToFileURL } = require('url');
+const fs = require('node:fs');
+const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 const GLOBAL_INSTALL_ENABLED_VALUE = 'true';
 const CI_ENABLED_VALUES = new Set(['true', '1']);
@@ -32,7 +32,7 @@ function hasDependency(packageJson) {
       return false;
     }
 
-    return PACKAGE_NAMES.some((packageName) => Object.prototype.hasOwnProperty.call(group, packageName));
+    return PACKAGE_NAMES.some((packageName) => Object.hasOwn(group, packageName));
   });
 }
 
@@ -45,6 +45,35 @@ async function loadCreateOrUpdate() {
   const distModuleUrl = pathToFileURL(distEntry).href;
   const distModule = await import(distModuleUrl);
   return distModule.createOrUpdate;
+}
+
+function shouldSkipAutoInit(env, log) {
+  if (CI_ENABLED_VALUES.has(env.CI)) {
+    return true;
+  }
+  if (env.npm_config_global === GLOBAL_INSTALL_ENABLED_VALUE) {
+    log('Global install detected, skipping TypeScript Bootstrap auto-initialization');
+    return true;
+  }
+  if (env.TS_BOOTSTRAP_AUTO_INIT === AUTO_INIT_DISABLED_VALUE) {
+    log('TS_BOOTSTRAP_AUTO_INIT=false, skipping TypeScript Bootstrap auto-initialization');
+    return true;
+  }
+  return false;
+}
+
+function resolveBootstrapOptions(packageJson, hasBootstrapMetadata, env, basename, targetDir) {
+  const requestedTemplate = hasBootstrapMetadata
+    ? packageJson.typescriptBootstrap.template
+    : (env.TS_BOOTSTRAP_TEMPLATE || DEFAULT_TEMPLATE);
+  const template = VALID_TEMPLATES.has(requestedTemplate) ? requestedTemplate : DEFAULT_TEMPLATE;
+  const projectName = typeof packageJson.name === 'string' && packageJson.name.trim().length > 0
+    ? packageJson.name
+    : basename(targetDir);
+  const projectTitle = typeof packageJson.description === 'string' && packageJson.description.trim().length > 0
+    ? packageJson.description
+    : projectName;
+  return { template, projectName, projectTitle };
 }
 
 async function autoInitOnInstall(deps = {}) {
@@ -65,17 +94,7 @@ async function autoInitOnInstall(deps = {}) {
     return createOrUpdate(options);
   });
 
-  if (CI_ENABLED_VALUES.has(env.CI)) {
-    return 0;
-  }
-
-  if (env.npm_config_global === GLOBAL_INSTALL_ENABLED_VALUE) {
-    log('Global install detected, skipping TypeScript Bootstrap auto-initialization');
-    return 0;
-  }
-
-  if (env.TS_BOOTSTRAP_AUTO_INIT === AUTO_INIT_DISABLED_VALUE) {
-    log('TS_BOOTSTRAP_AUTO_INIT=false, skipping TypeScript Bootstrap auto-initialization');
+  if (shouldSkipAutoInit(env, log)) {
     return 0;
   }
 
@@ -109,20 +128,9 @@ async function autoInitOnInstall(deps = {}) {
     return 0;
   }
 
-  // For existing projects with metadata, use the template from metadata
-  // For fresh installs, use env var or default template
-  const requestedTemplate = hasBootstrapMetadata
-    ? packageJson.typescriptBootstrap.template
-    : (env.TS_BOOTSTRAP_TEMPLATE || DEFAULT_TEMPLATE);
-  const template = VALID_TEMPLATES.has(requestedTemplate)
-    ? requestedTemplate
-    : DEFAULT_TEMPLATE;
-  const projectName = typeof packageJson.name === 'string' && packageJson.name.trim().length > 0
-    ? packageJson.name
-    : basename(targetDir);
-  const projectTitle = typeof packageJson.description === 'string' && packageJson.description.trim().length > 0
-    ? packageJson.description
-    : projectName;
+  const { template, projectName, projectTitle } = resolveBootstrapOptions(
+    packageJson, hasBootstrapMetadata, env, basename, targetDir
+  );
 
   try {
     const action = hasBootstrapMetadata ? 'Updating' : 'Initializing';
@@ -160,4 +168,6 @@ module.exports = {
   hasDependency,
   isFreshDirectory,
   loadCreateOrUpdate,
+  shouldSkipAutoInit,
+  resolveBootstrapOptions,
 };

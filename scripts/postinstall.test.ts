@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
 const postinstallModule = require('./postinstall.cjs');
 
 const { autoInitOnInstall, hasDependency, isFreshDirectory } = postinstallModule as {
@@ -10,114 +10,113 @@ const { autoInitOnInstall, hasDependency, isFreshDirectory } = postinstallModule
   isFreshDirectory: (entries: string[]) => boolean;
 };
 
+function createTempProjectDir(packageJson: Record<string, unknown>): string {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'postinstall-auto-init-'));
+  fs.writeFileSync(
+    path.join(tempDir, 'package.json'),
+    `${JSON.stringify(packageJson, null, 2)}\n`,
+    'utf-8'
+  );
+  return tempDir;
+}
+
+function cleanupTempDir(tempDir: string): void {
+  fs.rmSync(tempDir, { recursive: true, force: true });
+}
+
+function withInvalidJson(): () => string {
+  return () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'postinstall-auto-init-'));
+    fs.writeFileSync(path.join(tempDir, 'package.json'), 'invalid json{', 'utf-8');
+    return tempDir;
+  };
+}
+
+function withNoPackageJson(): () => string {
+  return () => fs.mkdtempSync(path.join(os.tmpdir(), 'postinstall-auto-init-'));
+}
+
+async function runTest(
+  setup: () => string,
+  opts: {
+    env?: Record<string, string>;
+    expectCalled?: boolean;
+    expectedArgs?: Record<string, unknown>;
+    log?: () => void;
+    cwd?: () => string;
+  } = {}
+): Promise<void> {
+  const tempDir = setup();
+  const bootstrapProject = vi.fn(async () => undefined);
+  const mockLog = opts.log ? vi.fn(opts.log) : undefined;
+  const mockCwd = opts.cwd ? vi.fn(opts.cwd) : undefined;
+
+  try {
+    const exitCode = await autoInitOnInstall({
+      env: { INIT_CWD: tempDir, ...opts.env },
+      bootstrapProject,
+      log: mockLog,
+      cwd: mockCwd,
+    });
+
+    expect(exitCode).toBe(0);
+
+    if (opts.expectCalled && opts.expectedArgs) {
+      expect(bootstrapProject).toHaveBeenCalledWith({ ...opts.expectedArgs, targetDir: tempDir });
+    } else if (opts.expectCalled === false) {
+      expect(bootstrapProject).not.toHaveBeenCalled();
+    }
+
+    if (mockCwd && opts.env && !opts.env.INIT_CWD) {
+      expect(mockCwd).toHaveBeenCalled();
+    }
+  } finally {
+    cleanupTempDir(tempDir);
+  }
+}
+
+function withPackageJson(packageJson: Record<string, unknown>): () => string {
+  return () => createTempProjectDir(packageJson);
+}
+
+function withExtraFile(packageJson: Record<string, unknown>, filename: string): () => string {
+  return () => {
+    const tempDir = createTempProjectDir(packageJson);
+    fs.writeFileSync(path.join(tempDir, filename), 'content', 'utf-8');
+    return tempDir;
+  };
+}
+
+async function runErrorTest(
+  packageJson: Record<string, unknown>,
+  errorToThrow: unknown,
+  expectedErrorMessage: string
+): Promise<void> {
+  const tempDir = createTempProjectDir(packageJson);
+  const bootstrapProject = vi.fn(async () => {
+    throw errorToThrow;
+  });
+  const mockError = vi.fn();
+
+  try {
+    const exitCode = await autoInitOnInstall({
+      env: { INIT_CWD: tempDir },
+      bootstrapProject,
+      error: mockError,
+    });
+
+    expect(exitCode).toBe(1);
+    expect(mockError).toHaveBeenCalledWith(
+      'TypeScript Bootstrap operation failed:',
+      expectedErrorMessage
+    );
+  } finally {
+    cleanupTempDir(tempDir);
+  }
+}
+
 describe('postinstall.cjs', () => {
   const PACKAGE_NAME = '@diogo-org/typescript-bootstrap';
-  const DEFAULT_TEMPLATE = 'typescript';
-
-  function createTempProjectDir(packageJson: Record<string, unknown>): string {
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'postinstall-auto-init-'));
-    fs.writeFileSync(
-      path.join(tempDir, 'package.json'),
-      `${JSON.stringify(packageJson, null, 2)}\n`,
-      'utf-8'
-    );
-    return tempDir;
-  }
-
-  function cleanupTempDir(tempDir: string): void {
-    fs.rmSync(tempDir, { recursive: true, force: true });
-  }
-
-  async function runTest(
-    setup: () => string,
-    opts: {
-      env?: Record<string, string>;
-      expectCalled?: boolean;
-      expectedArgs?: Record<string, unknown>;
-      log?: () => void;
-      cwd?: () => string;
-    } = {}
-  ): Promise<void> {
-    const tempDir = setup();
-    const bootstrapProject = vi.fn(async () => undefined);
-    const mockLog = opts.log ? vi.fn(opts.log) : undefined;
-    const mockCwd = opts.cwd ? vi.fn(opts.cwd) : undefined;
-
-    try {
-      const exitCode = await autoInitOnInstall({
-        env: { INIT_CWD: tempDir, ...opts.env },
-        bootstrapProject,
-        log: mockLog,
-        cwd: mockCwd,
-      });
-
-      expect(exitCode).toBe(0);
-
-      if (opts.expectCalled && opts.expectedArgs) {
-        expect(bootstrapProject).toHaveBeenCalledWith({ ...opts.expectedArgs, targetDir: tempDir });
-      } else if (opts.expectCalled === false) {
-        expect(bootstrapProject).not.toHaveBeenCalled();
-      }
-
-      if (mockCwd && opts.env && !opts.env.INIT_CWD) {
-        expect(mockCwd).toHaveBeenCalled();
-      }
-    } finally {
-      cleanupTempDir(tempDir);
-    }
-  }
-
-  function withPackageJson(packageJson: Record<string, unknown>): () => string {
-    return () => createTempProjectDir(packageJson);
-  }
-
-  function withInvalidJson(): () => string {
-    return () => {
-      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'postinstall-auto-init-'));
-      fs.writeFileSync(path.join(tempDir, 'package.json'), 'invalid json{', 'utf-8');
-      return tempDir;
-    };
-  }
-
-  function withNoPackageJson(): () => string {
-    return () => fs.mkdtempSync(path.join(os.tmpdir(), 'postinstall-auto-init-'));
-  }
-
-  function withExtraFile(packageJson: Record<string, unknown>, filename: string): () => string {
-    return () => {
-      const tempDir = createTempProjectDir(packageJson);
-      fs.writeFileSync(path.join(tempDir, filename), 'content', 'utf-8');
-      return tempDir;
-    };
-  }
-
-  async function runErrorTest(
-    packageJson: Record<string, unknown>,
-    errorToThrow: unknown,
-    expectedErrorMessage: string
-  ): Promise<void> {
-    const tempDir = createTempProjectDir(packageJson);
-    const bootstrapProject = vi.fn(async () => {
-      throw errorToThrow;
-    });
-    const mockError = vi.fn();
-
-    try {
-      const exitCode = await autoInitOnInstall({
-        env: { INIT_CWD: tempDir },
-        bootstrapProject,
-        error: mockError,
-      });
-
-      expect(exitCode).toBe(1);
-      expect(mockError).toHaveBeenCalledWith(
-        'TypeScript Bootstrap operation failed:',
-        expectedErrorMessage
-      );
-    } finally {
-      cleanupTempDir(tempDir);
-    }
-  }
 
   it('runs auto-init in a fresh project directory with package dependency', async () => {
     await runTest(

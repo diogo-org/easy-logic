@@ -82,5 +82,3 @@ export function ExamplesSidebar({ onExampleClick }: ExamplesSidebarProps) {
     </Box>
   )
 }
-
-export default ExamplesSidebar

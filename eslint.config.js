@@ -1,13 +1,49 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import sonarjs from 'eslint-plugin-sonarjs';
+import { defineConfig } from 'eslint/config';
+
+// Node.js globals for CJS script files
+const nodeGlobals = {
+  require: 'readonly',
+  module: 'writable',
+  exports: 'writable',
+  __dirname: 'readonly',
+  __filename: 'readonly',
+  process: 'readonly',
+  console: 'readonly',
+  Buffer: 'readonly',
+  setTimeout: 'readonly',
+  clearTimeout: 'readonly',
+  setInterval: 'readonly',
+  clearInterval: 'readonly',
+  URL: 'readonly',
+};
 
 // High-quality ESLint configuration for TypeScript projects
 // Enforces strict rules to maintain code quality for AI-assisted development
-export default tseslint.config(
+// SonarJS rules mirror SonarLint/SonarQube checks so violations are caught in CI
+export default defineConfig(
   eslint.configs.recommended,
-  ...tseslint.configs.recommended,
+  tseslint.configs.recommended,
+  sonarjs.configs.recommended,
   {
     ignores: ['dist/**', 'coverage/**', 'report/**', 'node_modules/**', '*.config.js', '*.config.ts'],
+  },
+  // CJS Node.js scripts: provide node globals, relax TS-specific rules
+  {
+    files: ['scripts/**/*.cjs', '.husky/**/*.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: nodeGlobals,
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+      'no-magic-numbers': 'off',
+      // PATH-based commands are expected and safe in local dev scripts
+      'sonarjs/no-os-command-from-path': 'off',
+      'sonarjs/os-command': 'warn',
+    },
   },
   {
     files: ['src/**/*.ts', 'src/**/*.tsx'],
@@ -52,6 +88,11 @@ export default tseslint.config(
     rules: {
       'no-magic-numbers': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+      // Test files for CJS modules legitimately use require()
+      '@typescript-eslint/no-require-imports': 'off',
+      // Test files testing git/shell commands trigger these path-safety rules intentionally
+      'sonarjs/no-os-command-from-path': 'off',
+      'sonarjs/os-command': 'off',
     },
   }
 );

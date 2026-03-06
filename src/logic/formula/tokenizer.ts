@@ -116,7 +116,7 @@ export class Tokenizer {
     // Variables (single letters or multi-character identifiers)
     if (/[a-zA-Z_]/.test(ch)) {
       let value = ''
-      while (this.peek() && /[a-zA-Z0-9_]/.test(this.peek()!)) {
+      while (this.peek() && /\w/.test(this.peek()!)) {
         value += this.peek()
         this.advance()
       }

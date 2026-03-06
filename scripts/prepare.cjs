@@ -5,7 +5,7 @@
  * Skips husky installation in CI environments to allow publishing without dev dependencies.
  */
 
-const { execSync } = require('child_process');
+const { execSync } = require('node:child_process');
 
 /**
  * Core logic for husky installation with dependency injection for testability
@@ -39,7 +39,7 @@ function prepareHusky(deps = {}) {
   // This is more robust than checking node_modules/husky directly
   try {
     requireResolve('husky');
-  } catch (err) {
+  } catch {
     log('Husky not installed (devDependencies may be omitted), skipping husky install');
     return 0;
   }

@@ -3,24 +3,9 @@
  * Re-exports from modular files for backward compatibility
  */
 
-// Re-export types
-export type {
-  Token,
-  TokenTypeValue,
-  Formula,
-  FormulaTypeValue,
-} from './types'
-
-export {
-  FormulaType,
-  TokenType,
-  TWO_CHAR_OPERATOR_LENGTH,
-  THREE_CHAR_OPERATOR_LENGTH,
-} from './types'
-
-// Re-export classes
-export { Tokenizer } from './tokenizer'
-export { Parser } from './parserClass'
+// Re-export types used by other modules
+export type { Formula } from './types'
+export { FormulaType } from './types'
 
 // Convenience functions
 import { Tokenizer } from './tokenizer'

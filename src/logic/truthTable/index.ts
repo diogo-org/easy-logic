@@ -3,8 +3,4 @@
  */
 
 export type { TruthTableRow } from './generator'
-export { 
-  generateTruthTable, 
-  evaluateFormula,
-  getFormulaVariables 
-} from './generator'
+export { generateTruthTable } from './generator'
