@@ -3,6 +3,8 @@
  * Handles all celebration-related state and logic
  */
 
+/* eslint-disable sonarjs/pseudo-random -- Math.random() is used only for visual animations (confetti position, size, delay), not for security purposes */
+
 import { useState, useCallback } from 'react'
 import { confettiColors, shapes } from '../constants/animations'
 import { CELEBRATION, ANIMATION_MS } from '../constants/ui'

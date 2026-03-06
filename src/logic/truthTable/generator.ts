@@ -24,7 +24,7 @@ function getVariables(formula: Formula): Set<string> {
   return vars
 }
 
-export function evaluateFormula(formula: Formula, assignment: Record<string, boolean>): boolean {
+function evaluateFormula(formula: Formula, assignment: Record<string, boolean>): boolean {
   switch (formula.type) {
     case FormulaType.VAR:
       return assignment[formula.value!] ?? false
@@ -77,12 +77,4 @@ export function generateTruthTable(formulaString: string): TruthTableRow[] {
   }
 
   return rows
-}
-
-/**
- * Get the variables from a formula string
- */
-export function getFormulaVariables(formulaString: string): string[] {
-  const formula = tokenizeAndParse(formulaString)
-  return Array.from(getVariables(formula)).sort()
 }

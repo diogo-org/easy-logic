@@ -31,7 +31,7 @@ import {
   Star,
   AutoAwesome,
 } from '@mui/icons-material'
-import { CELEBRATION, PROOF_HINT_STEPS } from '../constants/ui'
+import { CELEBRATION } from '../constants/ui'
 import {
   confettiFall,
   twinkle,
@@ -45,6 +45,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { RULE_KEYS } from '../logic/proof'
+import { getNextHintKey } from '../logic/proof/hintStrategy'
 import { useProofState } from '../hooks/useProofState'
 import { useCelebration } from '../hooks/useCelebration'
 import ProofStep from '../components/ProofStep'
@@ -110,69 +111,13 @@ export default function ProofAssistantPage() {
 
   // Provide guided hints based on the current state
   const getNextHint = (): string | null => {
-    // Modus Ponens KB: select p and p→q, then apply MP
-    if (selectedKB === 'modus-ponens') {
-      if (proofState.steps.length === 2 && selectedSteps.length === 0) {
-        return t('hintSelectBothPremises')
-      }
-      if (selectedSteps.length === 2) {
-        return t('hintClickModusPonens')
-      }
-      if (proofState.steps.length > 2) {
-        return null // They're done or making progress
-      }
-    }
-
-    // Conjunction KB: select p and q, then apply ∧I
-    if (selectedKB === 'conjunction') {
-      if (proofState.steps.length === 2 && selectedSteps.length === 0) {
-        return t('hintSelectBothPremises')
-      }
-      if (selectedSteps.length === 2) {
-        return t('hintClickAndIntro')
-      }
-    }
-
-    // Conjunction Elimination KB: select p∧q, then apply ∧E
-    if (selectedKB === 'elimination') {
-      if (proofState.steps.length === 1 && selectedSteps.length === 0) {
-        return t('hintSelectPremise')
-      }
-      if (selectedSteps.length === 1) {
-        const goalIsP = proofState.goal === 'p'
-        return goalIsP 
-          ? t('hintClickAndElimLeft')
-          : t('hintClickAndElimRight')
-      }
-    }
-
-    // Disjunction KB: select p, then apply ∨I
-    if (selectedKB === 'disjunction') {
-      if (proofState.steps.length === 1 && selectedSteps.length === 0) {
-        return t('hintSelectPremise')
-      }
-      if (selectedSteps.length === 1) {
-        return t('hintClickOrIntro')
-      }
-    }
-
-    // Hypothetical Syllogism: needs 2 MP applications
-    if (selectedKB === 'syllogism' && proofState.goal === 'r') {
-      if (proofState.steps.length === PROOF_HINT_STEPS.SYLLOGISM_INITIAL && selectedSteps.length === 0) {
-        return t('hintSelectForMP1')
-      }
-      if (proofState.steps.length === PROOF_HINT_STEPS.SYLLOGISM_INITIAL && selectedSteps.length === PROOF_HINT_STEPS.STEPS_REQUIRED) {
-        return t('hintClickMP')
-      }
-      if (proofState.steps.length === PROOF_HINT_STEPS.SYLLOGISM_AFTER_MP && selectedSteps.length === 0) {
-        return t('hintSelectForMP2')
-      }
-      if (proofState.steps.length === PROOF_HINT_STEPS.SYLLOGISM_AFTER_MP && selectedSteps.length === PROOF_HINT_STEPS.STEPS_REQUIRED) {
-        return t('hintClickMPAgain')
-      }
-    }
-
-    return null
+    const hintKey = getNextHintKey({
+      selectedKB,
+      stepCount: proofState.steps.length,
+      selectedCount: selectedSteps.length,
+      goal: proofState.goal,
+    })
+    return hintKey ? t(hintKey) : null
   }
 
   return (
@@ -461,11 +406,11 @@ export default function ProofAssistantPage() {
                 key={`star-${i}`}
                 sx={{
                   position: 'fixed',
-                  left: `${Math.random() * CELEBRATION.SCALE_PERCENT}%`,
-                  top: `${Math.random() * CELEBRATION.SCALE_PERCENT}%`,
-                  fontSize: CELEBRATION.STAR_SIZE_MIN + Math.random() * CELEBRATION.STAR_SIZE_RANGE,
+                  left: `${Math.random() * CELEBRATION.SCALE_PERCENT}%`, // eslint-disable-line sonarjs/pseudo-random
+                  top: `${Math.random() * CELEBRATION.SCALE_PERCENT}%`, // eslint-disable-line sonarjs/pseudo-random
+                  fontSize: CELEBRATION.STAR_SIZE_MIN + Math.random() * CELEBRATION.STAR_SIZE_RANGE, // eslint-disable-line sonarjs/pseudo-random
                   color: 'gold',
-                  animation: `${twinkle} ${CELEBRATION.TWINKLE_BASE_DURATION + Math.random()}s ease-in-out infinite ${Math.random()}s`,
+                  animation: `${twinkle} ${CELEBRATION.TWINKLE_BASE_DURATION + Math.random()}s ease-in-out infinite ${Math.random()}s`, // eslint-disable-line sonarjs/pseudo-random
                   pointerEvents: 'none',
                 }}
               />

@@ -10,6 +10,19 @@ import { FormulaDisplay } from './FormulaDisplay'
 import { parseFormula } from '../logic/formula'
 import { LAYOUT, OPACITY } from '../constants/ui'
 
+function getBgColor(isSelected: boolean, isPremise: boolean, isBranchStart: boolean): string {
+  if (isSelected) {return 'action.selected'}
+  if (isPremise) {return 'success.light'}
+  if (isBranchStart) {return 'warning.light'}
+  return 'background.paper'
+}
+
+function getBorderColor(isPremise: boolean, isBranchStart: boolean): string {
+  if (isPremise) {return 'success.main'}
+  if (isBranchStart) {return 'warning.main'}
+  return 'transparent'
+}
+
 interface ProofStepProps {
   step: ProofStepType
   isSelectable: boolean
@@ -47,15 +60,9 @@ export default function ProofStep({
         gap: { xs: 1, sm: 2 },
         flexWrap: { xs: 'wrap', sm: 'nowrap' },
         cursor: isSelectable ? 'pointer' : 'default',
-        bgcolor: isSelected 
-          ? 'action.selected' 
-          : isPremise 
-            ? 'success.light' 
-            : isBranchStart 
-              ? 'warning.light' 
-              : 'background.paper',
-        borderLeft: isPremise ? '4px solid' : isBranchStart ? '4px solid' : 'none',
-        borderLeftColor: isPremise ? 'success.main' : isBranchStart ? 'warning.main' : 'transparent',
+        bgcolor: getBgColor(isSelected, isPremise, isBranchStart),
+        borderLeft: (isPremise || isBranchStart) ? '4px solid' : 'none',
+        borderLeftColor: getBorderColor(isPremise, isBranchStart),
         '&:hover': isSelectable
           ? {
               bgcolor: 'action.hover',

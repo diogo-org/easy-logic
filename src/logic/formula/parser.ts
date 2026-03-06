@@ -16,7 +16,7 @@
 
 import { tokenizeAndParse, Formula, FormulaType } from './common'
 
-export function formulaToLatex(formula: Formula, parentPrecedence: number = 0): string {
+function formulaToLatex(formula: Formula, parentPrecedence: number = 0): string {
   // Operator precedence (lower number = lower precedence)
   const ATOM_PRECEDENCE = 6
   const precedence: Record<string, number> = {

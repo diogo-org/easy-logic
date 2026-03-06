@@ -105,9 +105,7 @@ export function useProofState(initialFormula: string, onProofComplete?: () => vo
         let newDepth = proofState.currentDepth
 
         // Update depth based on rule
-        if (rule.id === 'assume') {
-          newDepth = newStep.depth
-        } else if (rule.id === 'impl_intro') {
+        if (rule.id === 'assume' || rule.id === 'impl_intro') {
           newDepth = newStep.depth
         }
 
@@ -176,10 +174,7 @@ export function useProofState(initialFormula: string, onProofComplete?: () => vo
       let newDepth = 0
       if (stepsToKeep.length > 0) {
         const lastStep = stepsToKeep[stepsToKeep.length - 1]
-        newDepth =
-          lastStep.ruleKey === RULE_KEYS.ASSUME
-            ? lastStep.depth
-            : lastStep.depth
+        newDepth = lastStep.depth
       }
 
       setProofState({

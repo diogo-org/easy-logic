@@ -6,12 +6,7 @@
 export type { 
   ProofStep, 
   ProofState, 
-  Rule, 
   ApplicableRule, 
-  SuggestedGoal, 
-  KnowledgeBase, 
-  ProofSystem,
-  RuleKey,
 } from './types'
 
 // Constants

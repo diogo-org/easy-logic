@@ -70,7 +70,3 @@ export const OPACITY = {
   TRANSPARENT: 0,
 } as const
 
-// Parser constants
-export const PARSER = {
-  OPERATOR_ARROW_LENGTH: 3,
-} as const

@@ -144,292 +144,266 @@ export class NaturalDeduction implements ProofSystem {
     const newId = state.steps.length + 1
 
     try {
-      switch (rule.id) {
-        case 'assume':
-          if (!userInput) {return null}
-          return {
-            id: newId,
-            lineNumber: this.computeLineNumber(state, true),
-            formula: userInput,
-            ruleKey: RULE_KEYS.ASSUME,
-            dependencies: [],
-            justificationKey: 'justificationAssumption',
-            depth: state.currentDepth + 1,
-            isSubproofStart: true,
-          }
-
-        case 'mp': {
-          const steps = this.getTwoSteps(state, selectedSteps)
-          if (!steps) {return null}
-          const [step1, step2] = steps
-
-          // Try both orders: (P, P→Q) and (P→Q, P)
-          const result = this.tryModusPonens(step1, step2) || this.tryModusPonens(step2, step1)
-          if (!result) {return null}
-
-          return {
-            id: newId,
-            lineNumber: this.computeLineNumber(state, false),
-            formula: result,
-            ruleKey: RULE_KEYS.MODUS_PONENS,
-            dependencies: selectedSteps,
-            justificationKey: 'justificationMP',
-            justificationParams: { step1: step1.lineNumber, step2: step2.lineNumber },
-            depth: state.currentDepth,
-          }
-        }
-
-        case 'mt': {
-          const steps = this.getTwoSteps(state, selectedSteps)
-          if (!steps) {return null}
-          const [step1, step2] = steps
-
-          // Try both orders: (P→Q, ¬Q) and (¬Q, P→Q)
-          const result = this.tryModusTollens(step1, step2) || this.tryModusTollens(step2, step1)
-          if (!result) {return null}
-
-          return {
-            id: newId,
-            lineNumber: this.computeLineNumber(state, false),
-            formula: result,
-            ruleKey: RULE_KEYS.MODUS_TOLLENS,
-            dependencies: selectedSteps,
-            justificationKey: 'justificationMT',
-            justificationParams: { step1: step1.lineNumber, step2: step2.lineNumber },
-            depth: state.currentDepth,
-          }
-        }
-
-        case 'and_intro': {
-          const steps = this.getTwoSteps(state, selectedSteps)
-          if (!steps) {return null}
-          const [step1, step2] = steps
-
-          return {
-            id: newId,
-            lineNumber: this.computeLineNumber(state, false),
-            formula: `(${step1.formula}) ^ (${step2.formula})`,
-            ruleKey: RULE_KEYS.AND_INTRO,
-            dependencies: selectedSteps,
-            justificationKey: 'justificationAndIntro',
-            justificationParams: { step1: step1.lineNumber, step2: step2.lineNumber },
-            depth: state.currentDepth,
-          }
-        }
-
-        case 'and_elim_left': {
-          const step = this.getOneStep(state, selectedSteps)
-          if (!step) {return null}
-
-          const parsed = tokenizeAndParse(step.formula)
-          if (parsed.type !== FormulaType.AND || !parsed.left) {return null}
-
-          return {
-            id: newId,
-            lineNumber: this.computeLineNumber(state, false),
-            formula: formulaToString(parsed.left),
-            ruleKey: RULE_KEYS.AND_ELIM_LEFT,
-            dependencies: selectedSteps,
-            justificationKey: 'justificationAndElimLeft',
-            justificationParams: { step: step.lineNumber },
-            depth: state.currentDepth,
-          }
-        }
-
-        case 'and_elim_right': {
-          const step = this.getOneStep(state, selectedSteps)
-          if (!step) {return null}
-
-          const parsed = tokenizeAndParse(step.formula)
-          if (parsed.type !== FormulaType.AND || !parsed.right) {return null}
-
-          return {
-            id: newId,
-            lineNumber: this.computeLineNumber(state, false),
-            formula: formulaToString(parsed.right),
-            ruleKey: RULE_KEYS.AND_ELIM_RIGHT,
-            dependencies: selectedSteps,
-            justificationKey: 'justificationAndElimRight',
-            justificationParams: { step: step.lineNumber },
-            depth: state.currentDepth,
-          }
-        }
-
-        case 'or_intro_left': {
-          const step = this.getOneStep(state, selectedSteps)
-          if (!step || !userInput) {return null}
-
-          return {
-            id: newId,
-            lineNumber: this.computeLineNumber(state, false),
-            formula: `(${step.formula}) | (${userInput})`,
-            ruleKey: RULE_KEYS.OR_INTRO_LEFT,
-            dependencies: selectedSteps,
-            justificationKey: 'justificationOrIntroLeft',
-            justificationParams: { step: step.lineNumber },
-            depth: state.currentDepth,
-          }
-        }
-
-        case 'or_intro_right': {
-          const step = this.getOneStep(state, selectedSteps)
-          if (!step || !userInput) {return null}
-
-          return {
-            id: newId,
-            lineNumber: this.computeLineNumber(state, false),
-            formula: `(${userInput}) | (${step.formula})`,
-            ruleKey: RULE_KEYS.OR_INTRO_RIGHT,
-            dependencies: selectedSteps,
-            justificationKey: 'justificationOrIntroRight',
-            justificationParams: { step: step.lineNumber },
-            depth: state.currentDepth,
-          }
-        }
-
-        case 'double_neg': {
-          const step = this.getOneStep(state, selectedSteps)
-          if (!step) {return null}
-
-          const parsed = tokenizeAndParse(step.formula)
-          if (parsed.type !== FormulaType.NOT || !parsed.left || parsed.left.type !== FormulaType.NOT || !parsed.left.left)
-            {return null}
-
-          return {
-            id: newId,
-            lineNumber: this.computeLineNumber(state, false),
-            formula: formulaToString(parsed.left.left),
-            ruleKey: RULE_KEYS.DOUBLE_NEG,
-            dependencies: selectedSteps,
-            justificationKey: 'justificationDoubleNeg',
-            justificationParams: { step: step.lineNumber },
-            depth: state.currentDepth,
-          }
-        }
-
-        case 'impl_intro': {
-          // Close the current assumption
-          if (state.currentDepth === 0) {return null}
-
-          const closedAssumptionIds = new Set(
-            state.steps
-              .filter((step) => step.ruleKey === RULE_KEYS.IMPL_INTRO && step.dependencies.length >= 1)
-              .map((step) => step.dependencies[0])
-          )
-          
-          // Find the first open assumption at current depth (it should be marked as isSubproofStart)
-          const assumption = state.steps.find(
-            (step) =>
-              step.depth === state.currentDepth &&
-              step.ruleKey === RULE_KEYS.ASSUME &&
-              !closedAssumptionIds.has(step.id)
-          )
-          
-          // The conclusion is the last step at current depth
-          const conclusion = [...state.steps]
-            .reverse()
-            .find((step) => step.depth === state.currentDepth)
-          
-          if (!assumption || !conclusion) {return null}
-
-          // Compute line number by incrementing the last segment of assumption's line number
-          // Examples: '1' -> '2', '1.1' -> '1.2', '2.3' -> '2.4'
-          const lineParts = assumption.lineNumber.split('.')
-          const lastPartIndex = lineParts.length - 1
-          const lastPart = parseInt(lineParts[lastPartIndex], 10)
-          if (Number.isNaN(lastPart)) {return null}
-          lineParts[lastPartIndex] = String(lastPart + 1)
-          const lineNumber = lineParts.join('.')
-
-          return {
-            id: newId,
-            lineNumber,
-            formula: `(${assumption.formula}) -> (${conclusion.formula})`,
-            ruleKey: RULE_KEYS.IMPL_INTRO,
-            dependencies: [assumption.id, conclusion.id],
-            justificationKey: 'justificationImplIntro',
-            justificationParams: { start: assumption.lineNumber, end: conclusion.lineNumber },
-            depth: state.currentDepth - 1,
-            isSubproofEnd: true,
-          }
-        }
-
-        case 'or_elim': {
-          // Disjunction elimination (proof by cases)
-          // User selects a disjunction P∨Q, we create two branches with assumptions P and Q
-          const step = this.getOneStep(state, selectedSteps)
-          if (!step) {return null}
-
-          const parsed = tokenizeAndParse(step.formula)
-          if (parsed.type !== FormulaType.OR || !parsed.left || !parsed.right) {return null}
-
-          // Store the original formula - the UI will detect OR_ELIM and handle branching
-          // We don't use brackets in the actual formula since they're not parseable
-          return {
-            id: newId,
-            lineNumber: this.computeLineNumber(state, false),
-            formula: step.formula,
-            ruleKey: RULE_KEYS.OR_ELIM,
-            dependencies: selectedSteps,
-            justificationKey: 'justificationOrElim',
-            justificationParams: { step: step.lineNumber },
-            depth: state.currentDepth,
-          }
-        }
-
-        case 'lem': {
-          // Law of Excluded Middle: introduce P ∨ ¬P for any formula P
-          if (!userInput || userInput.trim() === '') {return null}
-          
-          const trimmed = userInput.trim()
-          
-          // Determine if we need to wrap the formula in parentheses
-          // We need parentheses if the formula contains binary operators
-          const needsParens = /[|^&]|->|<->/.test(trimmed) && !isFullyParenthesized(trimmed)
-          
-          const wrappedFormula = needsParens ? `(${trimmed})` : trimmed
-          const lemFormula = `${wrappedFormula} | ~${wrappedFormula}`
-          
-          return {
-            id: newId,
-            lineNumber: this.computeLineNumber(state, false),
-            formula: lemFormula,
-            ruleKey: RULE_KEYS.LEM,
-            dependencies: [],
-            justificationKey: 'justificationLEM',
-            depth: state.currentDepth,
-          }
-        }
-
-        case 'disj_syl': {
-          // Disjunctive Syllogism: From P∨Q and ¬P, derive Q (or from P∨Q and ¬Q, derive P)
-          const steps = this.getTwoSteps(state, selectedSteps)
-          if (!steps) {return null}
-          const [step1, step2] = steps
-
-          // Try both orders
-          const result = this.tryDisjunctiveSyllogism(step1, step2) || 
-                        this.tryDisjunctiveSyllogism(step2, step1)
-          if (!result) {return null}
-
-          return {
-            id: newId,
-            lineNumber: this.computeLineNumber(state, false),
-            formula: result,
-            ruleKey: RULE_KEYS.DISJ_SYL,
-            dependencies: selectedSteps,
-            justificationKey: 'justificationDisjSyl',
-            justificationParams: { step1: step1.lineNumber, step2: step2.lineNumber },
-            depth: state.currentDepth,
-          }
-        }
-
-        default:
-          return null
-      }
+      const handler = this.ruleHandlers[rule.id]
+      if (!handler) {return null}
+      return handler(newId, state, selectedSteps, userInput)
     } catch (error) {
       console.error('Error applying rule:', error)
       return null
+    }
+  }
+
+  /** Maps rule IDs to their handler functions */
+  private ruleHandlers: Record<string, (newId: number, state: ProofState, selectedSteps: number[], userInput?: string) => ProofStep | null> = {
+    assume: (newId, state, _selectedSteps, userInput) => {
+      if (!userInput) {return null}
+      return {
+        id: newId,
+        lineNumber: this.computeLineNumber(state, true),
+        formula: userInput,
+        ruleKey: RULE_KEYS.ASSUME,
+        dependencies: [],
+        justificationKey: 'justificationAssumption',
+        depth: state.currentDepth + 1,
+        isSubproofStart: true,
+      }
+    },
+
+    mp: (newId, state, selectedSteps) => {
+      const steps = this.getTwoSteps(state, selectedSteps)
+      if (!steps) {return null}
+      const [step1, step2] = steps
+      const result = this.tryModusPonens(step1, step2) || this.tryModusPonens(step2, step1)
+      if (!result) {return null}
+      return {
+        id: newId,
+        lineNumber: this.computeLineNumber(state, false),
+        formula: result,
+        ruleKey: RULE_KEYS.MODUS_PONENS,
+        dependencies: selectedSteps,
+        justificationKey: 'justificationMP',
+        justificationParams: { step1: step1.lineNumber, step2: step2.lineNumber },
+        depth: state.currentDepth,
+      }
+    },
+
+    mt: (newId, state, selectedSteps) => {
+      const steps = this.getTwoSteps(state, selectedSteps)
+      if (!steps) {return null}
+      const [step1, step2] = steps
+      const result = this.tryModusTollens(step1, step2) || this.tryModusTollens(step2, step1)
+      if (!result) {return null}
+      return {
+        id: newId,
+        lineNumber: this.computeLineNumber(state, false),
+        formula: result,
+        ruleKey: RULE_KEYS.MODUS_TOLLENS,
+        dependencies: selectedSteps,
+        justificationKey: 'justificationMT',
+        justificationParams: { step1: step1.lineNumber, step2: step2.lineNumber },
+        depth: state.currentDepth,
+      }
+    },
+
+    and_intro: (newId, state, selectedSteps) => {
+      const steps = this.getTwoSteps(state, selectedSteps)
+      if (!steps) {return null}
+      const [step1, step2] = steps
+      return {
+        id: newId,
+        lineNumber: this.computeLineNumber(state, false),
+        formula: `(${step1.formula}) ^ (${step2.formula})`,
+        ruleKey: RULE_KEYS.AND_INTRO,
+        dependencies: selectedSteps,
+        justificationKey: 'justificationAndIntro',
+        justificationParams: { step1: step1.lineNumber, step2: step2.lineNumber },
+        depth: state.currentDepth,
+      }
+    },
+
+    and_elim_left: (newId, state, selectedSteps) => {
+      const step = this.getOneStep(state, selectedSteps)
+      if (!step) {return null}
+      const parsed = tokenizeAndParse(step.formula)
+      if (parsed.type !== FormulaType.AND || !parsed.left) {return null}
+      return {
+        id: newId,
+        lineNumber: this.computeLineNumber(state, false),
+        formula: formulaToString(parsed.left),
+        ruleKey: RULE_KEYS.AND_ELIM_LEFT,
+        dependencies: selectedSteps,
+        justificationKey: 'justificationAndElimLeft',
+        justificationParams: { step: step.lineNumber },
+        depth: state.currentDepth,
+      }
+    },
+
+    and_elim_right: (newId, state, selectedSteps) => {
+      const step = this.getOneStep(state, selectedSteps)
+      if (!step) {return null}
+      const parsed = tokenizeAndParse(step.formula)
+      if (parsed.type !== FormulaType.AND || !parsed.right) {return null}
+      return {
+        id: newId,
+        lineNumber: this.computeLineNumber(state, false),
+        formula: formulaToString(parsed.right),
+        ruleKey: RULE_KEYS.AND_ELIM_RIGHT,
+        dependencies: selectedSteps,
+        justificationKey: 'justificationAndElimRight',
+        justificationParams: { step: step.lineNumber },
+        depth: state.currentDepth,
+      }
+    },
+
+    or_intro_left: (newId, state, selectedSteps, userInput) => {
+      const step = this.getOneStep(state, selectedSteps)
+      if (!step || !userInput) {return null}
+      return {
+        id: newId,
+        lineNumber: this.computeLineNumber(state, false),
+        formula: `(${step.formula}) | (${userInput})`,
+        ruleKey: RULE_KEYS.OR_INTRO_LEFT,
+        dependencies: selectedSteps,
+        justificationKey: 'justificationOrIntroLeft',
+        justificationParams: { step: step.lineNumber },
+        depth: state.currentDepth,
+      }
+    },
+
+    or_intro_right: (newId, state, selectedSteps, userInput) => {
+      const step = this.getOneStep(state, selectedSteps)
+      if (!step || !userInput) {return null}
+      return {
+        id: newId,
+        lineNumber: this.computeLineNumber(state, false),
+        formula: `(${userInput}) | (${step.formula})`,
+        ruleKey: RULE_KEYS.OR_INTRO_RIGHT,
+        dependencies: selectedSteps,
+        justificationKey: 'justificationOrIntroRight',
+        justificationParams: { step: step.lineNumber },
+        depth: state.currentDepth,
+      }
+    },
+
+    double_neg: (newId, state, selectedSteps) => {
+      const step = this.getOneStep(state, selectedSteps)
+      if (!step) {return null}
+      const parsed = tokenizeAndParse(step.formula)
+      if (parsed.type !== FormulaType.NOT || !parsed.left || parsed.left.type !== FormulaType.NOT || !parsed.left.left) {return null}
+      return {
+        id: newId,
+        lineNumber: this.computeLineNumber(state, false),
+        formula: formulaToString(parsed.left.left),
+        ruleKey: RULE_KEYS.DOUBLE_NEG,
+        dependencies: selectedSteps,
+        justificationKey: 'justificationDoubleNeg',
+        justificationParams: { step: step.lineNumber },
+        depth: state.currentDepth,
+      }
+    },
+
+    impl_intro: (newId, state) => {
+      return this.applyImplIntro(newId, state)
+    },
+
+    or_elim: (newId, state, selectedSteps) => {
+      const step = this.getOneStep(state, selectedSteps)
+      if (!step) {return null}
+      const parsed = tokenizeAndParse(step.formula)
+      if (parsed.type !== FormulaType.OR || !parsed.left || !parsed.right) {return null}
+      return {
+        id: newId,
+        lineNumber: this.computeLineNumber(state, false),
+        formula: step.formula,
+        ruleKey: RULE_KEYS.OR_ELIM,
+        dependencies: selectedSteps,
+        justificationKey: 'justificationOrElim',
+        justificationParams: { step: step.lineNumber },
+        depth: state.currentDepth,
+      }
+    },
+
+    lem: (newId, state, _selectedSteps, userInput) => {
+      return this.applyLEM(newId, state, userInput)
+    },
+
+    disj_syl: (newId, state, selectedSteps) => {
+      const steps = this.getTwoSteps(state, selectedSteps)
+      if (!steps) {return null}
+      const [step1, step2] = steps
+      const result = this.tryDisjunctiveSyllogism(step1, step2) || this.tryDisjunctiveSyllogism(step2, step1)
+      if (!result) {return null}
+      return {
+        id: newId,
+        lineNumber: this.computeLineNumber(state, false),
+        formula: result,
+        ruleKey: RULE_KEYS.DISJ_SYL,
+        dependencies: selectedSteps,
+        justificationKey: 'justificationDisjSyl',
+        justificationParams: { step1: step1.lineNumber, step2: step2.lineNumber },
+        depth: state.currentDepth,
+      }
+    },
+  }
+
+  private applyImplIntro(newId: number, state: ProofState): ProofStep | null {
+    if (state.currentDepth === 0) {return null}
+
+    const closedAssumptionIds = new Set(
+      state.steps
+        .filter((step) => step.ruleKey === RULE_KEYS.IMPL_INTRO && step.dependencies.length >= 1)
+        .map((step) => step.dependencies[0])
+    )
+
+    const assumption = state.steps.find(
+      (step) =>
+        step.depth === state.currentDepth &&
+        step.ruleKey === RULE_KEYS.ASSUME &&
+        !closedAssumptionIds.has(step.id)
+    )
+
+    const conclusion = [...state.steps]
+      .reverse()
+      .find((step) => step.depth === state.currentDepth)
+
+    if (!assumption || !conclusion) {return null}
+
+    const lineParts = assumption.lineNumber.split('.')
+    const lastPartIndex = lineParts.length - 1
+    const lastPart = parseInt(lineParts[lastPartIndex], 10)
+    if (Number.isNaN(lastPart)) {return null}
+    lineParts[lastPartIndex] = String(lastPart + 1)
+    const lineNumber = lineParts.join('.')
+
+    return {
+      id: newId,
+      lineNumber,
+      formula: `(${assumption.formula}) -> (${conclusion.formula})`,
+      ruleKey: RULE_KEYS.IMPL_INTRO,
+      dependencies: [assumption.id, conclusion.id],
+      justificationKey: 'justificationImplIntro',
+      justificationParams: { start: assumption.lineNumber, end: conclusion.lineNumber },
+      depth: state.currentDepth - 1,
+      isSubproofEnd: true,
+    }
+  }
+
+  private applyLEM(newId: number, state: ProofState, userInput?: string): ProofStep | null {
+    if (!userInput || userInput.trim() === '') {return null}
+
+    const trimmed = userInput.trim()
+    const needsParens = /[|^&]|->|<->/.test(trimmed) && !isFullyParenthesized(trimmed)
+    const wrappedFormula = needsParens ? `(${trimmed})` : trimmed
+    const lemFormula = `${wrappedFormula} | ~${wrappedFormula}`
+
+    return {
+      id: newId,
+      lineNumber: this.computeLineNumber(state, false),
+      formula: lemFormula,
+      ruleKey: RULE_KEYS.LEM,
+      dependencies: [],
+      justificationKey: 'justificationLEM',
+      depth: state.currentDepth,
     }
   }
 

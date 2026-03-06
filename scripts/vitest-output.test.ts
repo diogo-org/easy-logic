@@ -3,7 +3,12 @@ import { describe, expect, it } from 'vitest';
 const vitestOutputModule = require('./vitest-output.cjs');
 
 const { parseVitestRunOutput } = vitestOutputModule as {
-  parseVitestRunOutput: (output: string) => { coverage: number; skippedTests: number };
+  parseVitestRunOutput: (output: string) => {
+    coverage: number;
+    skippedTests: number;
+    failedTests: number;
+    passedTests: number;
+  };
 };
 
 describe('vitest-output.cjs', () => {
@@ -43,5 +48,53 @@ describe('vitest-output.cjs', () => {
 
     expect(result.coverage).toBe(0);
     expect(result.skippedTests).toBe(1);
+  });
+
+  it('extracts failed test count', () => {
+    const output = [
+      ' RUN  v3.2.4 C:/repo',
+      '      Tests  3 passed | 2 failed (5)',
+    ].join('\n');
+
+    const result = parseVitestRunOutput(output);
+
+    expect(result.failedTests).toBe(2);
+    expect(result.passedTests).toBe(3);
+  });
+
+  it('returns zero failed tests when no failures are present', () => {
+    const output = [
+      ' RUN  v3.2.4 C:/repo',
+      '      Tests  10 passed (10)',
+    ].join('\n');
+
+    const result = parseVitestRunOutput(output);
+
+    expect(result.failedTests).toBe(0);
+    expect(result.passedTests).toBe(10);
+  });
+
+  it('extracts all fields together when output contains failures, skips, and coverage', () => {
+    const output = [
+      ' RUN  v3.2.4 C:/repo',
+      '      Tests  8 passed | 1 failed | 2 skipped (11)',
+      'All files |   82.00 |   75.00 |   80.00 |   82.00 |',
+    ].join('\n');
+
+    const result = parseVitestRunOutput(output);
+
+    expect(result.passedTests).toBe(8);
+    expect(result.failedTests).toBe(1);
+    expect(result.skippedTests).toBe(2);
+    expect(result.coverage).toBe(82);
+  });
+
+  it('returns zero for all counts when output is empty', () => {
+    const result = parseVitestRunOutput('');
+
+    expect(result.coverage).toBe(0);
+    expect(result.failedTests).toBe(0);
+    expect(result.passedTests).toBe(0);
+    expect(result.skippedTests).toBe(0);
   });
 });
