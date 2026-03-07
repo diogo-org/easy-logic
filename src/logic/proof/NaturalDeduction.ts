@@ -102,21 +102,52 @@ export class NaturalDeduction implements ProofSystem {
   }
 
   /**
-   * Get one step from the state by ID. Returns null if selection is invalid.
+   * Check if a step is accessible from the current proof context.
+   * A step from a closed subproof (discharged assumption) is NOT accessible.
    */
-  private getOneStep(state: ProofState, selectedSteps: number[]): ProofStep | null {
-    if (selectedSteps.length !== 1) {return null}
-    return state.steps.find(s => s.id === selectedSteps[0]) || null
+  private isStepAccessible(step: ProofStep, state: ProofState): boolean {
+    // Depth 0 steps are always accessible
+    if (step.depth === 0) {return true}
+
+    // Step beyond current depth is never accessible
+    if (step.depth > state.currentDepth) {return false}
+
+    // Find the assumption that opened this step's subproof
+    // (the latest ASSUME at step.depth whose id ≤ step.id)
+    const assumption = [...state.steps]
+      .filter(s => s.id <= step.id && s.depth === step.depth && s.ruleKey === RULE_KEYS.ASSUME)
+      .pop()
+
+    if (!assumption) {return false}
+
+    // Check if this assumption has been closed by →I
+    const closed = state.steps.some(s =>
+      s.ruleKey === RULE_KEYS.IMPL_INTRO &&
+      s.dependencies[0] === assumption.id
+    )
+
+    return !closed
   }
 
   /**
-   * Get two steps from the state by IDs. Returns null if selection is invalid.
+   * Get one step from the state by ID. Returns null if selection is invalid or step is inaccessible.
+   */
+  private getOneStep(state: ProofState, selectedSteps: number[]): ProofStep | null {
+    if (selectedSteps.length !== 1) {return null}
+    const step = state.steps.find(s => s.id === selectedSteps[0]) || null
+    if (step && !this.isStepAccessible(step, state)) {return null}
+    return step
+  }
+
+  /**
+   * Get two steps from the state by IDs. Returns null if selection is invalid or any step is inaccessible.
    */
   private getTwoSteps(state: ProofState, selectedSteps: number[]): [ProofStep, ProofStep] | null {
     if (selectedSteps.length !== 2) {return null}
     const step1 = state.steps.find(s => s.id === selectedSteps[0])
     const step2 = state.steps.find(s => s.id === selectedSteps[1])
     if (!step1 || !step2) {return null}
+    if (!this.isStepAccessible(step1, state) || !this.isStepAccessible(step2, state)) {return null}
     return [step1, step2]
   }
 
@@ -402,6 +433,9 @@ export class NaturalDeduction implements ProofSystem {
 
     const steps = selectedSteps.map(id => state.steps.find(s => s.id === id)).filter(Boolean) as ProofStep[]
     if (steps.length !== OR_ELIM_REQUIRED_STEPS) {return null}
+
+    // Verify all selected steps are accessible (not from closed subproofs)
+    if (steps.some(step => !this.isStepAccessible(step, state))) {return null}
 
     const { disjStep, otherSteps } = this.findDisjunctionStep(steps)
     if (!disjStep || otherSteps.length !== 2) {return null}

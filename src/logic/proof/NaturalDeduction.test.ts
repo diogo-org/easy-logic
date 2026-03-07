@@ -1855,4 +1855,113 @@ describe('NaturalDeduction', () => {
       expect(result).toBeNull()
     })
   })
+
+  describe('Bug 31 — step accessibility', () => {
+    /**
+     * State simulating the exploit:
+     * 1. (p) -> (q)  — Premise (depth 0)
+     * 2. p            — Assume (depth 1, subproof A opens)
+     * 3. q            — MP(1, 2) (depth 1)
+     * 4. (p) -> (q)   — →I(2, 3) (depth 0, subproof A CLOSES)
+     * 5. r            — Assume (depth 1, subproof B opens)
+     * currentDepth = 1
+     */
+    const stateWithClosedSubproof: ProofState = {
+      goal: 'r -> (q ^ r)',
+      premises: ['(p) -> (q)'],
+      steps: [
+        { id: 1, lineNumber: '1', formula: '(p) -> (q)', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        { id: 2, lineNumber: '1.1', formula: 'p', ruleKey: RULE_KEYS.ASSUME, dependencies: [], justificationKey: 'justificationAssumption', depth: 1, isSubproofStart: true },
+        { id: 3, lineNumber: '1.2', formula: 'q', ruleKey: RULE_KEYS.MODUS_PONENS, dependencies: [1, 2], justificationKey: 'justificationMP', depth: 1 },
+        { id: 4, lineNumber: '2', formula: '(p) -> (q)', ruleKey: RULE_KEYS.IMPL_INTRO, dependencies: [2, 3], justificationKey: 'justificationImplIntro', depth: 0, isSubproofEnd: true },
+        { id: 5, lineNumber: '2.1', formula: 'r', ruleKey: RULE_KEYS.ASSUME, dependencies: [], justificationKey: 'justificationAssumption', depth: 1, isSubproofStart: true },
+      ],
+      currentDepth: 1,
+      currentSubproofId: '2',
+      nextStepInSubproof: [3, 2],
+      isComplete: false,
+    }
+
+    it('rejects ∧I using a step from a closed subproof (two-step rule)', () => {
+      const rule = nd.getRules().find((r) => r.id === 'and_intro')!
+      // Step 3 is from closed subproof A, step 5 is from open subproof B → INVALID
+      const result = nd.applyRule(rule, stateWithClosedSubproof, [3, 5])
+      expect(result).toBeNull()
+    })
+
+    it('rejects MP using a step from a closed subproof', () => {
+      const rule = nd.getRules().find((r) => r.id === 'mp')!
+      // Step 2 (p) from closed subproof A + step 1 (p→q) depth 0 → INVALID
+      const result = nd.applyRule(rule, stateWithClosedSubproof, [1, 2])
+      expect(result).toBeNull()
+    })
+
+    it('rejects ∧E-left using a step from a closed subproof (one-step rule)', () => {
+      // Build a state where a closed subproof has a conjunction
+      const state: ProofState = {
+        ...stateWithClosedSubproof,
+        steps: [
+          { id: 1, lineNumber: '1', formula: '(p) -> (q)', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '1.1', formula: 'p', ruleKey: RULE_KEYS.ASSUME, dependencies: [], justificationKey: 'justificationAssumption', depth: 1, isSubproofStart: true },
+          { id: 3, lineNumber: '1.2', formula: '(p) ^ (q)', ruleKey: RULE_KEYS.AND_INTRO, dependencies: [1, 2], justificationKey: 'justificationAndIntro', depth: 1 },
+          { id: 4, lineNumber: '2', formula: '(p) -> ((p) ^ (q))', ruleKey: RULE_KEYS.IMPL_INTRO, dependencies: [2, 3], justificationKey: 'justificationImplIntro', depth: 0, isSubproofEnd: true },
+          { id: 5, lineNumber: '2.1', formula: 'r', ruleKey: RULE_KEYS.ASSUME, dependencies: [], justificationKey: 'justificationAssumption', depth: 1, isSubproofStart: true },
+        ],
+      }
+      const rule = nd.getRules().find((r) => r.id === 'and_elim_left')!
+      // Step 3 has a conjunction in closed subproof → should be rejected
+      const result = nd.applyRule(rule, state, [3])
+      expect(result).toBeNull()
+    })
+
+    it('allows rule application using steps from the current open subproof', () => {
+      // Add a step 6 (s) at depth 1 in the open subproof B, then ∧I(5, 6) should work
+      const state: ProofState = {
+        ...stateWithClosedSubproof,
+        steps: [
+          ...stateWithClosedSubproof.steps,
+          { id: 6, lineNumber: '2.2', formula: 's', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 1 },
+        ],
+      }
+      const rule = nd.getRules().find((r) => r.id === 'and_intro')!
+      const result = nd.applyRule(rule, state, [5, 6])
+      expect(result).not.toBeNull()
+      expect(result!.formula).toBe('(r) ^ (s)')
+    })
+
+    it('allows rule application using depth-0 steps from inside a subproof', () => {
+      // From inside open subproof B, use depth 0 step 1 and step 4 → should work
+      const rule = nd.getRules().find((r) => r.id === 'mp')!
+      // Step 1 is (p)->q at depth 0, step 4 is (p)->q at depth 0 — both accessible
+      // We need a proper MP test: use step 4 ((p)->(q)) with some p at depth 0
+      // Actually let's test ∧I with two depth-0 steps
+      const andRule = nd.getRules().find((r) => r.id === 'and_intro')!
+      const result = nd.applyRule(andRule, stateWithClosedSubproof, [1, 4])
+      expect(result).not.toBeNull()
+    })
+
+    it('rejects or_elim when one of the 3 steps is from a closed subproof', () => {
+      // Build a state with a closed subproof containing an implication,
+      // then try or_elim using that inaccessible step
+      const state: ProofState = {
+        goal: 'q',
+        premises: ['(p) | (r)'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: '(p) | (r)', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '1.1', formula: 's', ruleKey: RULE_KEYS.ASSUME, dependencies: [], justificationKey: 'justificationAssumption', depth: 1, isSubproofStart: true },
+          { id: 3, lineNumber: '1.2', formula: '(p) -> (q)', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 1 },
+          { id: 4, lineNumber: '2', formula: '(s) -> ((p) -> (q))', ruleKey: RULE_KEYS.IMPL_INTRO, dependencies: [2, 3], justificationKey: 'justificationImplIntro', depth: 0, isSubproofEnd: true },
+          { id: 5, lineNumber: '3', formula: '(r) -> (q)', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [4],
+        isComplete: false,
+      }
+      const rule = nd.getRules().find((r) => r.id === 'or_elim')!
+      // Step 3 (p→q) is from closed subproof → should be rejected
+      const result = nd.applyRule(rule, state, [1, 3, 5])
+      expect(result).toBeNull()
+    })
+  })
 })
