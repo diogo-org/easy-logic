@@ -99,4 +99,17 @@ export const knowledgeBases: KnowledgeBase[] = [
       },
     ],
   },
+  {
+    id: 'proof-by-cases',
+    nameKey: 'kbProofByCases',
+    descriptionKey: 'kbProofByCasesDesc',
+    premises: ['p | q', 'p -> r', 'q -> r'],
+    suggestedGoals: [
+      {
+        labelKey: 'goalDeriveByCases',
+        formula: 'r',
+        descriptionKey: 'goalDeriveByCasesDesc',
+      },
+    ],
+  },
 ]

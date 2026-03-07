@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { NaturalDeduction } from './NaturalDeduction'
 import { ProofState, RULE_KEYS } from './types'
-import { tokenizeAndParse } from '../formula/common'
+import { normalizeFormula } from './formulaHelpers'
 
 describe('NaturalDeduction', () => {
   const nd = new NaturalDeduction()
@@ -777,8 +777,8 @@ describe('NaturalDeduction', () => {
       expect(result.reason).toBe('Need a disjunction (P∨Q) to apply this rule')
     })
 
-    it('checks applicability - applicable when disjunction exists', () => {
-      const stateWithDisjunction: ProofState = {
+    it('checks applicability - not applicable with only disjunction (needs implications too)', () => {
+      const stateWithDisjunctionOnly: ProofState = {
         goal: 'r',
         premises: ['p | q'],
         steps: [
@@ -791,117 +791,233 @@ describe('NaturalDeduction', () => {
       }
 
       const orElimRule = nd.getRules().find((r) => r.id === 'or_elim')!
-      const result = nd.checkApplicability(orElimRule, stateWithDisjunction)
+      const result = nd.checkApplicability(orElimRule, stateWithDisjunctionOnly)
+
+      expect(result.applicable).toBe(false)
+      expect(result.reason).toContain('implications')
+    })
+
+    it('checks applicability - applicable when disjunction and two implications exist', () => {
+      const stateWithAll: ProofState = {
+        goal: 'r',
+        premises: ['p | q', 'p -> r', 'q -> r'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: 'p -> r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 3, lineNumber: '3', formula: 'q -> r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [4],
+        isComplete: false,
+      }
+
+      const orElimRule = nd.getRules().find((r) => r.id === 'or_elim')!
+      const result = nd.checkApplicability(orElimRule, stateWithAll)
 
       expect(result.applicable).toBe(true)
     })
 
-    it('applies or_elim to create branching step', () => {
+    it('applies or_elim with disjunction and two matching implications (proof by cases)', () => {
       const state: ProofState = {
         goal: 'r',
-        premises: ['p | q'],
+        premises: ['p | q', 'p -> r', 'q -> r'],
         steps: [
           { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: 'p -> r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 3, lineNumber: '3', formula: 'q -> r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
         ],
         currentDepth: 0,
         currentSubproofId: '',
-        nextStepInSubproof: [2],
+        nextStepInSubproof: [4],
         isComplete: false,
       }
 
       const orElimRule = nd.getRules().find((r) => r.id === 'or_elim')!
-      const result = nd.applyRule(orElimRule, state, [1])
+      const result = nd.applyRule(orElimRule, state, [1, 2, 3])
 
       expect(result).not.toBeNull()
       expect(result?.ruleKey).toBe(RULE_KEYS.OR_ELIM)
-      expect(result?.formula).toContain('p')
-      expect(result?.formula).toContain('q')
+      expect(normalizeFormula(result!.formula)).toBe(normalizeFormula('r'))
     })
 
-    it('returns null when no step is selected', () => {
+    it('applies or_elim regardless of step selection order', () => {
+      const state: ProofState = {
+        goal: 'r',
+        premises: ['p | q', 'p -> r', 'q -> r'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: 'p -> r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 3, lineNumber: '3', formula: 'q -> r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [4],
+        isComplete: false,
+      }
+
+      const orElimRule = nd.getRules().find((r) => r.id === 'or_elim')!
+      // Select in different order: impl1, impl2, disjunction
+      const result = nd.applyRule(orElimRule, state, [3, 1, 2])
+
+      expect(result).not.toBeNull()
+      expect(normalizeFormula(result!.formula)).toBe(normalizeFormula('r'))
+    })
+
+    it('applies or_elim with derived implications from subproofs', () => {
       const state: ProofState = {
         goal: 'r',
         premises: ['p | q'],
         steps: [
           { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: 'p', ruleKey: RULE_KEYS.ASSUME, dependencies: [], justificationKey: 'justificationAssumption', depth: 1, isSubproofStart: true },
+          { id: 3, lineNumber: '2.1', formula: 'r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 1 },
+          { id: 4, lineNumber: '3', formula: '(p) -> (r)', ruleKey: RULE_KEYS.IMPL_INTRO, dependencies: [2, 3], justificationKey: 'justificationImplIntro', depth: 0, isSubproofEnd: true },
+          { id: 5, lineNumber: '4', formula: 'q', ruleKey: RULE_KEYS.ASSUME, dependencies: [], justificationKey: 'justificationAssumption', depth: 1, isSubproofStart: true },
+          { id: 6, lineNumber: '4.1', formula: 'r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 1 },
+          { id: 7, lineNumber: '5', formula: '(q) -> (r)', ruleKey: RULE_KEYS.IMPL_INTRO, dependencies: [5, 6], justificationKey: 'justificationImplIntro', depth: 0, isSubproofEnd: true },
         ],
         currentDepth: 0,
         currentSubproofId: '',
-        nextStepInSubproof: [2],
+        nextStepInSubproof: [8],
         isComplete: false,
       }
 
       const orElimRule = nd.getRules().find((r) => r.id === 'or_elim')!
-      const result = nd.applyRule(orElimRule, state, [])
+      const result = nd.applyRule(orElimRule, state, [1, 4, 7])
 
-      expect(result).toBeNull()
+      expect(result).not.toBeNull()
+      expect(normalizeFormula(result!.formula)).toBe(normalizeFormula('r'))
     })
 
-    it('returns null when selected step is not a disjunction', () => {
+    it('returns null when fewer than 3 steps are selected', () => {
       const state: ProofState = {
         goal: 'r',
-        premises: ['p'],
+        premises: ['p | q', 'p -> r'],
         steps: [
-          { id: 1, lineNumber: '1', formula: 'p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: 'p -> r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
         ],
         currentDepth: 0,
         currentSubproofId: '',
-        nextStepInSubproof: [2],
+        nextStepInSubproof: [3],
         isComplete: false,
       }
 
       const orElimRule = nd.getRules().find((r) => r.id === 'or_elim')!
-      const result = nd.applyRule(orElimRule, state, [1])
+      const result = nd.applyRule(orElimRule, state, [1, 2])
 
       expect(result).toBeNull()
     })
 
-    it('should handle LEM-generated formulas like (p | ~p) | ~(p | ~p)', () => {
+    it('returns null when no disjunction is among selected steps', () => {
+      const state: ProofState = {
+        goal: 'r',
+        premises: ['p -> r', 'q -> r', 's -> r'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p -> r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: 'q -> r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 3, lineNumber: '3', formula: 's -> r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [4],
+        isComplete: false,
+      }
+
+      const orElimRule = nd.getRules().find((r) => r.id === 'or_elim')!
+      const result = nd.applyRule(orElimRule, state, [1, 2, 3])
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null when implications do not match disjuncts', () => {
+      const state: ProofState = {
+        goal: 'r',
+        premises: ['p | q', 'p -> r', 's -> r'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: 'p -> r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 3, lineNumber: '3', formula: 's -> r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [4],
+        isComplete: false,
+      }
+
+      const orElimRule = nd.getRules().find((r) => r.id === 'or_elim')!
+      const result = nd.applyRule(orElimRule, state, [1, 2, 3])
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null when implications have different consequents', () => {
+      const state: ProofState = {
+        goal: 'r',
+        premises: ['p | q', 'p -> r', 'q -> s'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: 'p -> r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 3, lineNumber: '3', formula: 'q -> s', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [4],
+        isComplete: false,
+      }
+
+      const orElimRule = nd.getRules().find((r) => r.id === 'or_elim')!
+      const result = nd.applyRule(orElimRule, state, [1, 2, 3])
+
+      expect(result).toBeNull()
+    })
+
+    it('should handle LEM-generated formulas with matching implications', () => {
       const state: ProofState = {
         goal: 'r',
         premises: [],
         steps: [
           { id: 1, lineNumber: '1', formula: '(p | ~p) | ~(p | ~p)', ruleKey: RULE_KEYS.LEM, dependencies: [], justificationKey: 'justificationLEM', depth: 0 },
+          { id: 2, lineNumber: '2', formula: '(p | ~p) -> r', ruleKey: RULE_KEYS.IMPL_INTRO, dependencies: [], justificationKey: 'justificationImplIntro', depth: 0 },
+          { id: 3, lineNumber: '3', formula: '~(p | ~p) -> r', ruleKey: RULE_KEYS.IMPL_INTRO, dependencies: [], justificationKey: 'justificationImplIntro', depth: 0 },
         ],
         currentDepth: 0,
         currentSubproofId: '',
-        nextStepInSubproof: [2],
+        nextStepInSubproof: [4],
         isComplete: false,
       }
 
       const orElimRule = nd.getRules().find((r) => r.id === 'or_elim')!
-      const result = nd.applyRule(orElimRule, state, [1])
+      const result = nd.applyRule(orElimRule, state, [1, 2, 3])
 
       expect(result).not.toBeNull()
-      // Should NOT contain brackets [ or ]
-      expect(result?.formula).not.toContain('[')
-      expect(result?.formula).not.toContain(']')
-      // Should be parseable
-      expect(() => tokenizeAndParse(result!.formula)).not.toThrow()
+      expect(normalizeFormula(result!.formula)).toBe(normalizeFormula('r'))
     })
 
-    it('should handle nested disjunctions with parentheses', () => {
+    it('includes proper justification with all three step references', () => {
       const state: ProofState = {
         goal: 'r',
-        premises: [],
+        premises: ['p | q', 'p -> r', 'q -> r'],
         steps: [
-          { id: 1, lineNumber: '1', formula: 'p | ~p | ~(p | ~p)', ruleKey: RULE_KEYS.LEM, dependencies: [], justificationKey: 'justificationLEM', depth: 0 },
+          { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: 'p -> r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 3, lineNumber: '3', formula: 'q -> r', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
         ],
         currentDepth: 0,
         currentSubproofId: '',
-        nextStepInSubproof: [2],
+        nextStepInSubproof: [4],
         isComplete: false,
       }
 
       const orElimRule = nd.getRules().find((r) => r.id === 'or_elim')!
-      const result = nd.applyRule(orElimRule, state, [1])
+      const result = nd.applyRule(orElimRule, state, [1, 2, 3])
 
       expect(result).not.toBeNull()
-      // Should NOT contain brackets [ or ]
-      expect(result?.formula).not.toContain('[')
-      expect(result?.formula).not.toContain(']')
-      // Should be parseable
-      expect(() => tokenizeAndParse(result!.formula)).not.toThrow()
+      expect(result?.justificationKey).toBe('justificationOrElim')
+      expect(result?.justificationParams).toHaveProperty('disjStep')
+      expect(result?.justificationParams).toHaveProperty('leftStep')
+      expect(result?.justificationParams).toHaveProperty('rightStep')
     })
   })
 

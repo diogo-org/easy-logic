@@ -81,7 +81,7 @@ export const naturalDeductionRules: Rule[] = [
     nameKey: 'ruleOrElim',
     descriptionKey: 'ruleOrElimDesc',
     category: 'elimination',
-    requiredSteps: 1,
+    requiredSteps: 3,
   },
   {
     id: 'disj_syl',

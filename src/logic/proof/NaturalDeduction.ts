@@ -10,6 +10,9 @@ import { knowledgeBases } from './knowledgeBases'
 import { naturalDeductionRules } from './rules'
 import { formulaToString, isFullyParenthesized, parseImplication, normalizeFormula } from './formulaHelpers'
 
+/** ∨ Elimination requires exactly 3 steps: P∨Q, P→C, Q→C */
+const OR_ELIM_REQUIRED_STEPS = 3
+
 export class NaturalDeduction implements ProofSystem {
   name = 'Natural Deduction'
 
@@ -51,9 +54,10 @@ export class NaturalDeduction implements ProofSystem {
       }
     }
 
-    // Or elimination needs a disjunction
+    // Or elimination needs a disjunction and two implications with matching antecedents
     if (rule.id === 'or_elim') {
-      const hasDisjunction = state.steps.some(s => {
+      const availSteps = state.steps.filter(s => s.depth <= state.currentDepth)
+      const hasDisjunction = availSteps.some(s => {
         try {
           const parsed = tokenizeAndParse(s.formula)
           return parsed.type === FormulaType.OR
@@ -61,10 +65,25 @@ export class NaturalDeduction implements ProofSystem {
           return false
         }
       })
+      if (!hasDisjunction) {
+        return {
+          ...rule,
+          applicable: false,
+          reason: 'Need a disjunction (P∨Q) to apply this rule',
+        }
+      }
+      const implicationCount = availSteps.filter(s => {
+        try {
+          return parseImplication(s.formula) !== null
+        } catch {
+          return false
+        }
+      }).length
+      const needsMore = implicationCount < 2
       return {
         ...rule,
-        applicable: hasDisjunction,
-        reason: hasDisjunction ? undefined : 'Need a disjunction (P∨Q) to apply this rule',
+        applicable: !needsMore,
+        reason: needsMore ? 'Need P∨Q plus two implications P→C and Q→C (use Assume + →I to build each case)' : undefined,
       }
     }
 
@@ -307,20 +326,7 @@ export class NaturalDeduction implements ProofSystem {
     },
 
     or_elim: (newId, state, selectedSteps) => {
-      const step = this.getOneStep(state, selectedSteps)
-      if (!step) {return null}
-      const parsed = tokenizeAndParse(step.formula)
-      if (parsed.type !== FormulaType.OR || !parsed.left || !parsed.right) {return null}
-      return {
-        id: newId,
-        lineNumber: this.computeLineNumber(state, false),
-        formula: step.formula,
-        ruleKey: RULE_KEYS.OR_ELIM,
-        dependencies: selectedSteps,
-        justificationKey: 'justificationOrElim',
-        justificationParams: { step: step.lineNumber },
-        depth: state.currentDepth,
-      }
+      return this.applyOrElim(newId, state, selectedSteps)
     },
 
     lem: (newId, state, _selectedSteps, userInput) => {
@@ -383,6 +389,113 @@ export class NaturalDeduction implements ProofSystem {
       depth: state.currentDepth - 1,
       isSubproofEnd: true,
     }
+  }
+
+  /**
+   * Apply ∨ Elimination (Proof by Cases).
+   * Requires 3 selected steps: a disjunction P∨Q, and two implications P→C and Q→C.
+   * The antecedents of the implications must match the disjuncts, and both consequents must be the same.
+   * Returns the shared consequent C.
+   */
+  private applyOrElim(newId: number, state: ProofState, selectedSteps: number[]): ProofStep | null {
+    if (selectedSteps.length !== OR_ELIM_REQUIRED_STEPS) {return null}
+
+    const steps = selectedSteps.map(id => state.steps.find(s => s.id === id)).filter(Boolean) as ProofStep[]
+    if (steps.length !== OR_ELIM_REQUIRED_STEPS) {return null}
+
+    const { disjStep, otherSteps } = this.findDisjunctionStep(steps)
+    if (!disjStep || otherSteps.length !== 2) {return null}
+
+    const matched = this.matchOrElimImplications(disjStep, otherSteps)
+    if (!matched) {return null}
+
+    return {
+      id: newId,
+      lineNumber: this.computeLineNumber(state, false),
+      formula: matched.consequent,
+      ruleKey: RULE_KEYS.OR_ELIM,
+      dependencies: selectedSteps,
+      justificationKey: 'justificationOrElim',
+      justificationParams: {
+        disjStep: disjStep.lineNumber,
+        leftStep: matched.leftImplStep.lineNumber,
+        rightStep: matched.rightImplStep.lineNumber,
+      },
+      depth: state.currentDepth,
+    }
+  }
+
+  /** Find the disjunction step among the selected steps */
+  private findDisjunctionStep(steps: ProofStep[]): { disjStep: ProofStep | null; otherSteps: ProofStep[] } {
+    let disjStep: ProofStep | null = null
+    const otherSteps: ProofStep[] = []
+
+    for (const step of steps) {
+      try {
+        const parsed = tokenizeAndParse(step.formula)
+        if (!disjStep && parsed.type === FormulaType.OR && parsed.left && parsed.right) {
+          disjStep = step
+        } else {
+          otherSteps.push(step)
+        }
+      } catch {
+        otherSteps.push(step)
+      }
+    }
+
+    return { disjStep, otherSteps }
+  }
+
+  /** Match two implications to the disjuncts, checking both orderings and shared consequent */
+  private matchOrElimImplications(
+    disjStep: ProofStep,
+    implSteps: ProofStep[],
+  ): { consequent: string; leftImplStep: ProofStep; rightImplStep: ProofStep } | null {
+    const parsedDisj = tokenizeAndParse(disjStep.formula)
+    const leftDisjunct = formulaToString(parsedDisj.left!)
+    const rightDisjunct = formulaToString(parsedDisj.right!)
+
+    const impl1 = parseImplication(implSteps[0].formula)
+    const impl2 = parseImplication(implSteps[1].formula)
+    if (!impl1 || !impl2) {return null}
+
+    const ordering = this.findImplicationOrdering(impl1, impl2, leftDisjunct, rightDisjunct)
+    if (!ordering) {return null}
+
+    const leftImpl = ordering.leftFirst ? impl1 : impl2
+    const rightImpl = ordering.leftFirst ? impl2 : impl1
+
+    if (normalizeFormula(leftImpl.consequent) !== normalizeFormula(rightImpl.consequent)) {
+      return null
+    }
+
+    return {
+      consequent: leftImpl.consequent,
+      leftImplStep: ordering.leftFirst ? implSteps[0] : implSteps[1],
+      rightImplStep: ordering.leftFirst ? implSteps[1] : implSteps[0],
+    }
+  }
+
+  /** Check which ordering of implications matches the disjuncts */
+  private findImplicationOrdering(
+    impl1: { antecedent: string; consequent: string },
+    impl2: { antecedent: string; consequent: string },
+    leftDisjunct: string,
+    rightDisjunct: string,
+  ): { leftFirst: boolean } | null {
+    if (
+      normalizeFormula(impl1.antecedent) === normalizeFormula(leftDisjunct) &&
+      normalizeFormula(impl2.antecedent) === normalizeFormula(rightDisjunct)
+    ) {
+      return { leftFirst: true }
+    }
+    if (
+      normalizeFormula(impl2.antecedent) === normalizeFormula(leftDisjunct) &&
+      normalizeFormula(impl1.antecedent) === normalizeFormula(rightDisjunct)
+    ) {
+      return { leftFirst: false }
+    }
+    return null
   }
 
   private applyLEM(newId: number, state: ProofState, userInput?: string): ProofStep | null {

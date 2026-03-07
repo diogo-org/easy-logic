@@ -67,7 +67,7 @@ export default function ProofStep({
 }: ProofStepProps) {
   const { t } = useTranslation()
   const isPremise = step.ruleKey === RULE_KEYS.PREMISE
-  const isBranchStart = step.ruleKey === RULE_KEYS.OR_ELIM
+  const isBranchStart = false // ∨E is now a proper conclusion step, not a branch marker
   
   // Convert formula to LaTeX for proper rendering
   const { latex, error } = parseFormula(step.formula)
