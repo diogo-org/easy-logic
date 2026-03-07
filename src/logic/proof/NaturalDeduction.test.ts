@@ -1856,8 +1856,9 @@ describe('NaturalDeduction', () => {
     })
   })
 
-  describe('computeLineNumber — Dewey numbering', () => {
-    it('Test A: simple P→P proof — assume gets "1", →I gets "2"', () => {
+
+  describe('computeLineNumber ÔÇö Dewey numbering', () => {
+    it('Test A: simple PÔåÆP proof ÔÇö assume gets "1", ÔåÆI gets "2"', () => {
       // Start with empty state
       const state: ProofState = {
         goal: 'p -> p',
@@ -1892,7 +1893,7 @@ describe('NaturalDeduction', () => {
       expect(step2!.depth).toBe(0)
     })
 
-    it('Test B: premises + subproof — assume gets next parent-level number', () => {
+    it('Test B: premises + subproof ÔÇö assume gets next parent-level number', () => {
       // State with 2 premises at depth 0
       const state: ProofState = {
         goal: 'r -> r',
@@ -1907,7 +1908,7 @@ describe('NaturalDeduction', () => {
         isComplete: false,
       }
 
-      // Apply assume → should be '3' (next parent-level), NOT '2.1'
+      // Apply assume ÔåÆ should be '3' (next parent-level), NOT '2.1'
       const assumeRule = nd.getRules().find((r) => r.id === 'assume')!
       const step3 = nd.applyRule(assumeRule, state, [], 'r')
 
@@ -1923,7 +1924,7 @@ describe('NaturalDeduction', () => {
         nextStepInSubproof: [4],
       }
 
-      // Apply MP inside subproof → should get '3.1'
+      // Apply MP inside subproof ÔåÆ should get '3.1'
       const mpRule = nd.getRules().find((r) => r.id === 'mp')!
       const step4 = nd.applyRule(mpRule, state2, [1, 2])
 
@@ -1938,7 +1939,7 @@ describe('NaturalDeduction', () => {
         nextStepInSubproof: [5],
       }
 
-      // Apply →I → should get '4' (next parent-level after '3')
+      // Apply ÔåÆI ÔåÆ should get '4' (next parent-level after '3')
       const implIntroRule = nd.getRules().find((r) => r.id === 'impl_intro')!
       const step5 = nd.applyRule(implIntroRule, state3, [])
 
@@ -1947,7 +1948,7 @@ describe('NaturalDeduction', () => {
       expect(step5!.depth).toBe(0)
     })
 
-    it('Test C: two consecutive subproofs — no duplicate lineNumbers', () => {
+    it('Test C: two consecutive subproofs ÔÇö no duplicate lineNumbers', () => {
       // State after first subproof is closed
       const state: ProofState = {
         goal: 'q -> q',
@@ -1963,7 +1964,7 @@ describe('NaturalDeduction', () => {
         isComplete: false,
       }
 
-      // Apply assume 'q' → should get '4' (next parent-level)
+      // Apply assume 'q' ÔåÆ should get '4' (next parent-level)
       const assumeRule = nd.getRules().find((r) => r.id === 'assume')!
       const step4 = nd.applyRule(assumeRule, state, [], 'q')
 
@@ -1979,7 +1980,7 @@ describe('NaturalDeduction', () => {
         nextStepInSubproof: [5],
       }
 
-      // Apply →I → should get '5' (NOT '4' which would duplicate)
+      // Apply ÔåÆI ÔåÆ should get '5' (NOT '4' which would duplicate)
       const implIntroRule = nd.getRules().find((r) => r.id === 'impl_intro')!
       const step5 = nd.applyRule(implIntroRule, state2, [])
 
@@ -1988,7 +1989,7 @@ describe('NaturalDeduction', () => {
       expect(step5!.depth).toBe(0)
     })
 
-    it('Test D: nested subproof — correct hierarchical Dewey numbering', () => {
+    it('Test D: nested subproof ÔÇö correct hierarchical Dewey numbering', () => {
       // State: outer assumption 'p' at depth 1
       const state: ProofState = {
         goal: 'p -> (q -> q)',
@@ -2002,7 +2003,7 @@ describe('NaturalDeduction', () => {
         isComplete: false,
       }
 
-      // Open inner subproof: assume 'q' → should get '1.1'
+      // Open inner subproof: assume 'q' ÔåÆ should get '1.1'
       const assumeRule = nd.getRules().find((r) => r.id === 'assume')!
       const step2 = nd.applyRule(assumeRule, state, [], 'q')
 
@@ -2018,7 +2019,7 @@ describe('NaturalDeduction', () => {
         nextStepInSubproof: [1, 2, 3],
       }
 
-      // Close inner subproof: →I → should get '1.2' (NOT '2')
+      // Close inner subproof: ÔåÆI ÔåÆ should get '1.2' (NOT '2')
       const implIntroRule = nd.getRules().find((r) => r.id === 'impl_intro')!
       const step3 = nd.applyRule(implIntroRule, state2, [])
 
@@ -2034,7 +2035,7 @@ describe('NaturalDeduction', () => {
         nextStepInSubproof: [1, 2],
       }
 
-      // Close outer subproof: →I → should get '2'
+      // Close outer subproof: ÔåÆI ÔåÆ should get '2'
       const step4 = nd.applyRule(implIntroRule, state3, [])
 
       expect(step4).not.toBeNull()
@@ -2056,7 +2057,7 @@ describe('NaturalDeduction', () => {
         isComplete: false,
       }
 
-      // Assume 'p' → lineNumber '2', depth 1
+      // Assume 'p' ÔåÆ lineNumber '2', depth 1
       const assumeRule = nd.getRules().find((r) => r.id === 'assume')!
       const step2 = nd.applyRule(assumeRule, state, [], 'p')
 
@@ -2070,7 +2071,7 @@ describe('NaturalDeduction', () => {
         nextStepInSubproof: [3],
       }
 
-      // MP on steps 1 and 2 inside subproof → should be '2.1'
+      // MP on steps 1 and 2 inside subproof ÔåÆ should be '2.1'
       const mpRule = nd.getRules().find((r) => r.id === 'mp')!
       const step3 = nd.applyRule(mpRule, state2, [2, 1])
 
@@ -2085,13 +2086,240 @@ describe('NaturalDeduction', () => {
         nextStepInSubproof: [4],
       }
 
-      // →I → should be '3' (next at depth 0)
+      // ÔåÆI ÔåÆ should be '3' (next at depth 0)
       const implIntroRule = nd.getRules().find((r) => r.id === 'impl_intro')!
       const step4 = nd.applyRule(implIntroRule, state3, [])
 
       expect(step4).not.toBeNull()
       expect(step4!.lineNumber).toBe('3')
       expect(step4!.depth).toBe(0)
+    })
+  })
+
+  describe('Bug 31 — step accessibility', () => {
+    /**
+     * State simulating the exploit:
+     * 1. (p) -> (q)  — Premise (depth 0)
+     * 2. p            ÔÇö Assume (depth 1, subproof A opens)
+     * 3. q            ÔÇö MP(1, 2) (depth 1)
+     * 4. (p) -> (q)   ÔÇö ÔåÆI(2, 3) (depth 0, subproof A CLOSES)
+     * 5. r            ÔÇö Assume (depth 1, subproof B opens)
+     * currentDepth = 1
+     */
+    const stateWithClosedSubproof: ProofState = {
+      goal: 'r -> (q ^ r)',
+      premises: ['(p) -> (q)'],
+      steps: [
+        { id: 1, lineNumber: '1', formula: '(p) -> (q)', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        { id: 2, lineNumber: '1.1', formula: 'p', ruleKey: RULE_KEYS.ASSUME, dependencies: [], justificationKey: 'justificationAssumption', depth: 1, isSubproofStart: true },
+        { id: 3, lineNumber: '1.2', formula: 'q', ruleKey: RULE_KEYS.MODUS_PONENS, dependencies: [1, 2], justificationKey: 'justificationMP', depth: 1 },
+        { id: 4, lineNumber: '2', formula: '(p) -> (q)', ruleKey: RULE_KEYS.IMPL_INTRO, dependencies: [2, 3], justificationKey: 'justificationImplIntro', depth: 0, isSubproofEnd: true },
+        { id: 5, lineNumber: '2.1', formula: 'r', ruleKey: RULE_KEYS.ASSUME, dependencies: [], justificationKey: 'justificationAssumption', depth: 1, isSubproofStart: true },
+      ],
+      currentDepth: 1,
+      currentSubproofId: '2',
+      nextStepInSubproof: [3, 2],
+      isComplete: false,
+    }
+
+    it('rejects ÔêºI using a step from a closed subproof (two-step rule)', () => {
+      const rule = nd.getRules().find((r) => r.id === 'and_intro')!
+      // Step 3 is from closed subproof A, step 5 is from open subproof B ÔåÆ INVALID
+      const result = nd.applyRule(rule, stateWithClosedSubproof, [3, 5])
+      expect(result).toBeNull()
+    })
+
+    it('rejects MP using a step from a closed subproof', () => {
+      const rule = nd.getRules().find((r) => r.id === 'mp')!
+      // Step 2 (p) from closed subproof A + step 1 (pÔåÆq) depth 0 ÔåÆ INVALID
+      const result = nd.applyRule(rule, stateWithClosedSubproof, [1, 2])
+      expect(result).toBeNull()
+    })
+
+    it('rejects ÔêºE-left using a step from a closed subproof (one-step rule)', () => {
+      // Build a state where a closed subproof has a conjunction
+      const state: ProofState = {
+        ...stateWithClosedSubproof,
+        steps: [
+          { id: 1, lineNumber: '1', formula: '(p) -> (q)', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '1.1', formula: 'p', ruleKey: RULE_KEYS.ASSUME, dependencies: [], justificationKey: 'justificationAssumption', depth: 1, isSubproofStart: true },
+          { id: 3, lineNumber: '1.2', formula: '(p) ^ (q)', ruleKey: RULE_KEYS.AND_INTRO, dependencies: [1, 2], justificationKey: 'justificationAndIntro', depth: 1 },
+          { id: 4, lineNumber: '2', formula: '(p) -> ((p) ^ (q))', ruleKey: RULE_KEYS.IMPL_INTRO, dependencies: [2, 3], justificationKey: 'justificationImplIntro', depth: 0, isSubproofEnd: true },
+          { id: 5, lineNumber: '2.1', formula: 'r', ruleKey: RULE_KEYS.ASSUME, dependencies: [], justificationKey: 'justificationAssumption', depth: 1, isSubproofStart: true },
+        ],
+      }
+      const rule = nd.getRules().find((r) => r.id === 'and_elim_left')!
+      // Step 3 has a conjunction in closed subproof ÔåÆ should be rejected
+      const result = nd.applyRule(rule, state, [3])
+      expect(result).toBeNull()
+    })
+
+    it('allows rule application using steps from the current open subproof', () => {
+      // Add a step 6 (s) at depth 1 in the open subproof B, then ÔêºI(5, 6) should work
+      const state: ProofState = {
+        ...stateWithClosedSubproof,
+        steps: [
+          ...stateWithClosedSubproof.steps,
+          { id: 6, lineNumber: '2.2', formula: 's', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 1 },
+        ],
+      }
+      const rule = nd.getRules().find((r) => r.id === 'and_intro')!
+      const result = nd.applyRule(rule, state, [5, 6])
+      expect(result).not.toBeNull()
+      expect(result!.formula).toBe('(r) ^ (s)')
+    })
+
+    it('allows rule application using depth-0 steps from inside a subproof', () => {
+      // From inside open subproof B, use depth 0 step 1 and step 4 ÔåÆ should work
+      // Test ÔêºI with two depth-0 steps
+      const andRule = nd.getRules().find((r) => r.id === 'and_intro')!
+      const result = nd.applyRule(andRule, stateWithClosedSubproof, [1, 4])
+      expect(result).not.toBeNull()
+    })
+
+    it('rejects or_elim when one of the 3 steps is from a closed subproof', () => {
+      // Build a state with a closed subproof containing an implication,
+      // then try or_elim using that inaccessible step
+      const state: ProofState = {
+        goal: 'q',
+        premises: ['(p) | (r)'],
+        steps: [
+          { id: 1, lineNumber: '1', formula: '(p) | (r)', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '1.1', formula: 's', ruleKey: RULE_KEYS.ASSUME, dependencies: [], justificationKey: 'justificationAssumption', depth: 1, isSubproofStart: true },
+          { id: 3, lineNumber: '1.2', formula: '(p) -> (q)', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 1 },
+          { id: 4, lineNumber: '2', formula: '(s) -> ((p) -> (q))', ruleKey: RULE_KEYS.IMPL_INTRO, dependencies: [2, 3], justificationKey: 'justificationImplIntro', depth: 0, isSubproofEnd: true },
+          { id: 5, lineNumber: '3', formula: '(r) -> (q)', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [4],
+        isComplete: false,
+      }
+      const rule = nd.getRules().find((r) => r.id === 'or_elim')!
+      // Step 3 (pÔåÆq) is from closed subproof ÔåÆ should be rejected
+      const result = nd.applyRule(rule, state, [1, 3, 5])
+      expect(result).toBeNull()
+    })
+  })
+
+  describe('Bug 32 ÔÇö validateProof depth check', () => {
+    it('rejects proof when lastStep.depth > 0 even if currentDepth is 0', () => {
+      const state: ProofState = {
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: 'p',
+            ruleKey: RULE_KEYS.ASSUME,
+            dependencies: [],
+            justificationKey: 'justificationAssumption',
+            depth: 1,
+          },
+        ],
+        currentDepth: 0,
+        goal: 'p',
+        premises: [],
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+      expect(nd.validateProof(state)).toBe(false)
+    })
+
+    it('accepts proof when both currentDepth and lastStep.depth are 0 and formula matches goal', () => {
+      const state: ProofState = {
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: 'p',
+            ruleKey: RULE_KEYS.PREMISE,
+            dependencies: [],
+            justificationKey: 'justificationPremise',
+            depth: 0,
+          },
+        ],
+        currentDepth: 0,
+        goal: 'p',
+        premises: ['p'],
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+      expect(nd.validateProof(state)).toBe(true)
+    })
+
+    it('rejects proof when formula matches goal but inside a subproof (both depths > 0)', () => {
+      const state: ProofState = {
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: 'p',
+            ruleKey: RULE_KEYS.ASSUME,
+            dependencies: [],
+            justificationKey: 'justificationAssumption',
+            depth: 1,
+          },
+        ],
+        currentDepth: 1,
+        goal: 'p',
+        premises: [],
+        currentSubproofId: '1',
+        nextStepInSubproof: [1, 2],
+        isComplete: false,
+      }
+      expect(nd.validateProof(state)).toBe(false)
+    })
+
+    it('uses AST-based comparison instead of normalizeFormula', () => {
+      // normalizeFormula strips parens, so "(p ^ q) -> r" and "p ^ (q -> r)" would
+      // incorrectly match. AST-based comparison should distinguish them.
+      const state: ProofState = {
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: '(p ^ q) -> r',
+            ruleKey: RULE_KEYS.PREMISE,
+            dependencies: [],
+            justificationKey: 'justificationPremise',
+            depth: 0,
+          },
+        ],
+        currentDepth: 0,
+        goal: 'p ^ (q -> r)',
+        premises: ['(p ^ q) -> r'],
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+      // These are structurally different formulas ÔÇö normalizeFormula would wrongly
+      // equate them because it strips all parentheses.
+      expect(nd.validateProof(state)).toBe(false)
+    })
+
+    it('validates correctly with equivalent formulas that have different whitespace', () => {
+      const state: ProofState = {
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: 'p  ->  q',
+            ruleKey: RULE_KEYS.PREMISE,
+            dependencies: [],
+            justificationKey: 'justificationPremise',
+            depth: 0,
+          },
+        ],
+        currentDepth: 0,
+        goal: 'p -> q',
+        premises: ['p -> q'],
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+      expect(nd.validateProof(state)).toBe(true)
     })
   })
 })

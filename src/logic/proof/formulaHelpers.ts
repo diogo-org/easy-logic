@@ -107,8 +107,28 @@ export function parseImplication(formula: string): { antecedent: string; consequ
 }
 
 /**
+ * @deprecated Use formulasMatch() instead — this function strips parentheses
+ * and lowercases, which conflates structurally different formulas.
+ * 
  * Normalize a formula string for comparison (removes spaces, parens, converts to lowercase)
  */
 export function normalizeFormula(formula: string): string {
   return formula.replace(/\s+/g, '').replace(/[()]/g, '').toLowerCase()
+}
+
+/**
+ * Compare two formula strings for structural equality using AST parsing.
+ * Handles whitespace differences and redundant parentheses correctly.
+ * Case-sensitive: 'T' (TRUE) !== 't' (variable).
+ * Returns false on parse errors (never crashes).
+ * Replaces normalizeFormula which was unsound (Bug 30 / Bug 32).
+ */
+export function formulasMatch(a: string, b: string): boolean {
+  try {
+    const parsedA = tokenizeAndParse(a)
+    const parsedB = tokenizeAndParse(b)
+    return formulaToString(parsedA) === formulaToString(parsedB)
+  } catch {
+    return false
+  }
 }

@@ -34,14 +34,15 @@ async function enterCustomGoal(page: Page, formula: string) {
 }
 
 /**
- * Select proof steps by their 1-based line-number position.
+ * Select proof steps by their Dewey-style line number (e.g. '1', '1.1', '2').
  * Each step row is a Paper element whose text starts with "N."
  */
-async function selectSteps(page: Page, ...positions: number[]) {
-  for (const pos of positions) {
+async function selectSteps(page: Page, ...lineNumbers: string[]) {
+  for (const ln of lineNumbers) {
+    const escaped = ln.replace(/\./g, '\\.')
     const stepRow = page
       .locator('.MuiPaper-root')
-      .filter({ hasText: new RegExp(`^\\s*${pos}\\.`) })
+      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.\\s`) })
       .first()
     await stepRow.click()
   }
@@ -130,30 +131,30 @@ test.describe('Level 6 — LEM + Complex Logic', () => {
     await applyRuleWithInput(page, 'Assume', '(p -> q) ^ (~p -> q) ^ ~~p')
 
     // Step 2: ∧ Elimination (Left) on step 1 → (p -> q) ^ (~p -> q)
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 3: ∧ Elimination (Right) on step 1 → ~~p
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 4: ∧ Elimination (Left) on step 2 → p -> q
-    await selectSteps(page, 2)
+    await selectSteps(page, '2')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 5: LEM (p) → p | ~p
     await applyRuleWithInput(page, 'Law of Excluded Middle', 'p')
 
     // Step 6: ∨ Elimination (Proof by Cases) on step 5 → p | ~p (setup)
-    await selectSteps(page, 5)
+    await selectSteps(page, '5')
     await applyRule(page, '∨ Elimination (Proof by Cases)')
 
     // Step 7: Disjunctive Syllogism on steps 6 (p | ~p) and 3 (~~p) → p
-    await selectSteps(page, 6, 3)
+    await selectSteps(page, '6', '3')
     await applyRule(page, 'Disjunctive Syllogism')
 
     // Step 8: Modus Ponens on steps 7 (p) and 4 (p -> q) → q
-    await selectSteps(page, 7, 4)
+    await selectSteps(page, '7', '4')
     await applyRule(page, 'Modus Ponens')
 
     // Step 9: → Introduction — closes subproof
@@ -195,18 +196,18 @@ test.describe('Level 6 — LEM + Complex Logic', () => {
     await applyRuleWithInput(page, 'Assume', '~~~~p')
 
     // Step 2: Double Negation on step 1 → ~~p
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, 'Double Negation')
 
     // Step 3: LEM (p) → p | ~p
     await applyRuleWithInput(page, 'Law of Excluded Middle', 'p')
 
     // Step 4: ∨ Elimination (Proof by Cases) on step 3 → p | ~p (setup)
-    await selectSteps(page, 3)
+    await selectSteps(page, '3')
     await applyRule(page, '∨ Elimination (Proof by Cases)')
 
     // Step 5: Disjunctive Syllogism on steps 4 (p | ~p) and 2 (~~p) → p
-    await selectSteps(page, 4, 2)
+    await selectSteps(page, '4', '2')
     await applyRule(page, 'Disjunctive Syllogism')
 
     // Step 6: → Introduction — closes subproof
@@ -278,30 +279,30 @@ test.describe('Level 6 — LEM + Complex Logic', () => {
     await applyRuleWithInput(page, 'Assume', '(p -> q) ^ ~~p')
 
     // Step 2: ∧ Elimination (Left) on step 1 → p -> q
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 3: ∧ Elimination (Right) on step 1 → ~~p
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 4: LEM (p) → p | ~p
     await applyRuleWithInput(page, 'Law of Excluded Middle', 'p')
 
     // Step 5: ∨ Elimination (Proof by Cases) on step 4 → p | ~p (setup)
-    await selectSteps(page, 4)
+    await selectSteps(page, '4')
     await applyRule(page, '∨ Elimination (Proof by Cases)')
 
     // Step 6: Disjunctive Syllogism on steps 5 (p | ~p) and 3 (~~p) → p
-    await selectSteps(page, 5, 3)
+    await selectSteps(page, '5', '3')
     await applyRule(page, 'Disjunctive Syllogism')
 
     // Step 7: Modus Ponens on steps 6 (p) and 2 (p -> q) → q
-    await selectSteps(page, 6, 2)
+    await selectSteps(page, '6', '2')
     await applyRule(page, 'Modus Ponens')
 
     // Step 8: ∨ Introduction (Right) on step 7 (q), input ~p → ~p | q
-    await selectSteps(page, 7)
+    await selectSteps(page, '7')
     await applyRuleWithInput(page, '∨ Introduction (Right)', '~p')
 
     // Step 9: → Introduction — closes subproof

@@ -41,14 +41,15 @@ async function enterCustomGoal(page: Page, formula: string) {
 }
 
 /**
- * Select proof steps by their 1-based line-number position.
+ * Select proof steps by their Dewey-style line number (e.g. '1', '1.1', '2').
  * Each step row is a Paper element whose text starts with "N."
  */
-async function selectSteps(page: Page, ...positions: number[]) {
-  for (const pos of positions) {
+async function selectSteps(page: Page, ...lineNumbers: string[]) {
+  for (const ln of lineNumbers) {
+    const escaped = ln.replace(/\./g, '\\.')
     const stepRow = page
       .locator('.MuiPaper-root')
-      .filter({ hasText: new RegExp(`^\\s*${pos}\\.`) })
+      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.\\s`) })
       .first()
     await stepRow.click()
   }
@@ -120,11 +121,11 @@ test.describe('Level 2 — Multiple Steps', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible()
 
     // First Modus Ponens: select P (1) and P→Q (2) → derives Q
-    await selectSteps(page, 1, 2)
+    await selectSteps(page, '1', '2')
     await applyRule(page, 'Modus Ponens')
 
     // Second Modus Ponens: select Q→R (3) and Q (4) → derives R
-    await selectSteps(page, 3, 4)
+    await selectSteps(page, '3', '4')
     await applyRule(page, 'Modus Ponens')
 
     await expectProofComplete(page)
@@ -160,19 +161,19 @@ test.describe('Level 2 — Multiple Steps', () => {
     await applyRuleWithInput(page, 'Assume', '(p ^ q) ^ (q -> r)')
 
     // Step 2: ∧ Elimination (Right) on step 1 → q -> r
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 3: ∧ Elimination (Left) on step 1 → p ^ q
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 4: ∧ Elimination (Right) on step 3 → q
-    await selectSteps(page, 3)
+    await selectSteps(page, '3')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 5: Modus Ponens on steps 2 (q→r) and 4 (q) → r
-    await selectSteps(page, 2, 4)
+    await selectSteps(page, '2', '4')
     await applyRule(page, 'Modus Ponens')
 
     // Step 6: → Introduction — closes subproof
@@ -206,15 +207,15 @@ test.describe('Level 2 — Multiple Steps', () => {
     await applyRuleWithInput(page, 'Assume', '(p -> q) ^ ~q')
 
     // Step 2: ∧ Elimination (Left) on step 1 → p -> q
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 3: ∧ Elimination (Right) on step 1 → ~q
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 4: Modus Tollens on steps 2 and 3 → ~p
-    await selectSteps(page, 2, 3)
+    await selectSteps(page, '2', '3')
     await applyRule(page, 'Modus Tollens')
 
     // Step 5: → Introduction → closes subproof
@@ -250,15 +251,15 @@ test.describe('Level 2 — Multiple Steps', () => {
     await applyRuleWithInput(page, 'Assume', '(p | q) ^ ~p')
 
     // Step 2: ∧ Elimination (Left) on step 1 → p | q
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 3: ∧ Elimination (Right) on step 1 → ~p
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 4: Disjunctive Syllogism on steps 2 and 3 → q
-    await selectSteps(page, 2, 3)
+    await selectSteps(page, '2', '3')
     await applyRule(page, 'Disjunctive Syllogism')
 
     // Step 5: → Introduction → closes subproof
@@ -295,11 +296,11 @@ test.describe('Level 2 — Multiple Steps', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible()
 
     // Step 3: ∧ Introduction on steps 1 (p) and 2 (q) → p ∧ q
-    await selectSteps(page, 1, 2)
+    await selectSteps(page, '1', '2')
     await applyRule(page, '∧ Introduction')
 
     // Step 4: ∧ Introduction on steps 2 (q) and 3 (p ∧ q) → q ∧ (p ∧ q)
-    await selectSteps(page, 2, 3)
+    await selectSteps(page, '2', '3')
     await applyRule(page, '∧ Introduction')
 
     await expectProofComplete(page)
