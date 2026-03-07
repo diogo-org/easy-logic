@@ -42,18 +42,15 @@ async function enterCustomGoal(page: Page, formula: string) {
 }
 
 /**
- * Select proof steps by their 1-based position in the step list.
+ * Select proof steps by their Dewey-style line number (e.g. '1', '1.1', '2').
  * Each step row is a clickable Paper that toggles selection.
  */
-async function selectSteps(page: Page, ...positions: number[]) {
-  // Steps are rendered as Paper elements inside the proof-steps section.
-  // Each step starts with its line number "N." so we locate by that.
-  for (const pos of positions) {
-    // Click the checkbox for the step at position `pos`.
-    // Steps contain a checkbox when selectable - click the row itself.
+async function selectSteps(page: Page, ...lineNumbers: string[]) {
+  for (const ln of lineNumbers) {
+    const escaped = ln.replace(/\./g, '\\.')
     const stepRow = page
       .locator('.MuiPaper-root')
-      .filter({ hasText: new RegExp(`^\\s*${pos}\\.`) })
+      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.\\s`) })
       .first()
     await stepRow.click()
   }
@@ -116,7 +113,7 @@ test.describe('Level 1 — Simple Direct Rules', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible()
 
     // Select both premise steps
-    await selectSteps(page, 1, 2)
+    await selectSteps(page, '1', '2')
 
     // Apply Modus Ponens
     await applyRule(page, 'Modus Ponens')
@@ -142,7 +139,7 @@ test.describe('Level 1 — Simple Direct Rules', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible()
 
     // Select both premises
-    await selectSteps(page, 1, 2)
+    await selectSteps(page, '1', '2')
 
     // Apply ∧ Introduction
     await applyRule(page, '∧ Introduction')
@@ -167,7 +164,7 @@ test.describe('Level 1 — Simple Direct Rules', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible()
 
     // Select the premise (step 1: p ^ q)
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
 
     // Apply ∧ Elimination (Left)
     await applyRule(page, '∧ Elimination (Left)')
@@ -192,7 +189,7 @@ test.describe('Level 1 — Simple Direct Rules', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible()
 
     // Select the premise (step 1: p ^ q)
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
 
     // Apply ∧ Elimination (Right)
     await applyRule(page, '∧ Elimination (Right)')
@@ -218,7 +215,7 @@ test.describe('Level 1 — Simple Direct Rules', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible()
 
     // Select premise (step 1: p)
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
 
     // Apply ∨ Introduction (Left) — needs user input for the disjunct "q"
     await applyRuleWithInput(page, '∨ Introduction (Left)', 'q')
@@ -251,7 +248,7 @@ test.describe('Level 1 — Simple Direct Rules', () => {
     await applyRuleWithInput(page, 'Assume', '~~p')
 
     // Step 2: Select the assumption (step 1: ~~p) and apply Double Negation
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, 'Double Negation')
 
     // Step 3: Apply → Introduction to close the subproof

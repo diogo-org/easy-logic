@@ -33,14 +33,15 @@ async function enterCustomGoal(page: Page, formula: string) {
 }
 
 /**
- * Select proof steps by their 1-based line-number position.
+ * Select proof steps by their Dewey-style line number (e.g. '1', '1.1', '2').
  * Each step row is a Paper element whose text starts with "N."
  */
-async function selectSteps(page: Page, ...positions: number[]) {
-  for (const pos of positions) {
+async function selectSteps(page: Page, ...lineNumbers: string[]) {
+  for (const ln of lineNumbers) {
+    const escaped = ln.replace(/\./g, '\\.')
     const stepRow = page
       .locator('.MuiPaper-root')
-      .filter({ hasText: new RegExp(`^\\s*${pos}\\.`) })
+      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.\\s`) })
       .first()
     await stepRow.click()
   }
@@ -126,27 +127,27 @@ test.describe('Level 5 — Nested Subproofs', () => {
     await applyRuleWithInput(page, 'Assume', 'p ^ q ^ r')
 
     // Step 2: ∧ Elimination (Left) on step 1 → p ^ q
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 3: ∧ Elimination (Right) on step 1 → r
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 4: ∧ Elimination (Left) on step 2 → p
-    await selectSteps(page, 2)
+    await selectSteps(page, '2')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 5: ∧ Elimination (Right) on step 2 → q
-    await selectSteps(page, 2)
+    await selectSteps(page, '2')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 6: ∧ Introduction on steps 3 (r) and 5 (q) → r ^ q
-    await selectSteps(page, 3, 5)
+    await selectSteps(page, '3', '5')
     await applyRule(page, '∧ Introduction')
 
     // Step 7: ∧ Introduction on steps 6 (r ^ q) and 4 (p) → (r ^ q) ^ p
-    await selectSteps(page, 6, 4)
+    await selectSteps(page, '6', '4')
     await applyRule(page, '∧ Introduction')
 
     // Step 8: → Introduction — closes subproof
@@ -190,27 +191,27 @@ test.describe('Level 5 — Nested Subproofs', () => {
     await applyRuleWithInput(page, 'Assume', '(p -> (q -> r)) ^ p ^ q')
 
     // Step 2: ∧ Elimination (Left) on step 1 → (p -> (q -> r)) ^ p
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 3: ∧ Elimination (Right) on step 1 → q
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 4: ∧ Elimination (Left) on step 2 → p -> (q -> r)
-    await selectSteps(page, 2)
+    await selectSteps(page, '2')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 5: ∧ Elimination (Right) on step 2 → p
-    await selectSteps(page, 2)
+    await selectSteps(page, '2')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 6: Modus Ponens on steps 5 (p) and 4 (p -> (q -> r)) → q -> r
-    await selectSteps(page, 5, 4)
+    await selectSteps(page, '5', '4')
     await applyRule(page, 'Modus Ponens')
 
     // Step 7: Modus Ponens on steps 3 (q) and 6 (q -> r) → r
-    await selectSteps(page, 3, 6)
+    await selectSteps(page, '3', '6')
     await applyRule(page, 'Modus Ponens')
 
     // Step 8: → Introduction — closes subproof
@@ -254,27 +255,27 @@ test.describe('Level 5 — Nested Subproofs', () => {
     await applyRuleWithInput(page, 'Assume', '(p -> q) ^ (q -> r) ^ ~r')
 
     // Step 2: ∧ Elimination (Left) on step 1 → (p -> q) ^ (q -> r)
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 3: ∧ Elimination (Right) on step 1 → ~r
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 4: ∧ Elimination (Left) on step 2 → p -> q
-    await selectSteps(page, 2)
+    await selectSteps(page, '2')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 5: ∧ Elimination (Right) on step 2 → q -> r
-    await selectSteps(page, 2)
+    await selectSteps(page, '2')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 6: Modus Tollens on steps 5 (q -> r) and 3 (~r) → ~q
-    await selectSteps(page, 5, 3)
+    await selectSteps(page, '5', '3')
     await applyRule(page, 'Modus Tollens')
 
     // Step 7: Modus Tollens on steps 4 (p -> q) and 6 (~q) → ~p
-    await selectSteps(page, 4, 6)
+    await selectSteps(page, '4', '6')
     await applyRule(page, 'Modus Tollens')
 
     // Step 8: → Introduction — closes subproof

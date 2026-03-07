@@ -10,16 +10,16 @@ import { FormulaDisplay } from './FormulaDisplay'
 import { parseFormula } from '../logic/formula'
 import { OPACITY, FITCH, LAYOUT } from '../constants/ui'
 
-function getBgColor(isSelected: boolean, isPremise: boolean, isBranchStart: boolean): string {
+function getBgColor(isSelected: boolean, isPremise: boolean, isAssumption: boolean): string {
   if (isSelected) {return 'action.selected'}
   if (isPremise) {return 'success.light'}
-  if (isBranchStart) {return 'warning.light'}
+  if (isAssumption) {return 'warning.light'}
   return 'background.paper'
 }
 
-function getBorderColor(isPremise: boolean, isBranchStart: boolean): string {
+function getBorderColor(isPremise: boolean, isAssumption: boolean): string {
   if (isPremise) {return 'success.main'}
-  if (isBranchStart) {return 'warning.main'}
+  if (isAssumption) {return 'warning.main'}
   return 'transparent'
 }
 
@@ -67,7 +67,7 @@ export default function ProofStep({
 }: ProofStepProps) {
   const { t } = useTranslation()
   const isPremise = step.ruleKey === RULE_KEYS.PREMISE
-  const isBranchStart = false // ∨E is now a proper conclusion step, not a branch marker
+  const isAssumption = step.ruleKey === RULE_KEYS.ASSUME
   
   // Convert formula to LaTeX for proper rendering
   const { latex, error } = parseFormula(step.formula)
@@ -108,6 +108,7 @@ export default function ProofStep({
       {/* Main step card */}
       <Paper
         elevation={hasSubproofBars ? 0 : 1}
+        {...(isAssumption && { 'data-assumption': 'true' })}
         sx={{
           p: { xs: 1, sm: 2 },
           flex: 1,
@@ -116,9 +117,9 @@ export default function ProofStep({
           gap: { xs: 1, sm: 2 },
           flexWrap: { xs: 'wrap', sm: 'nowrap' },
           cursor: isSelectable ? 'pointer' : 'default',
-          bgcolor: getBgColor(isSelected, isPremise, isBranchStart),
-          borderLeft: (isPremise || isBranchStart) ? '4px solid' : 'none',
-          borderLeftColor: getBorderColor(isPremise, isBranchStart),
+          bgcolor: getBgColor(isSelected, isPremise, isAssumption),
+          borderLeft: (isPremise || isAssumption) ? '4px solid' : 'none',
+          borderLeftColor: getBorderColor(isPremise, isAssumption),
           '&:hover': isSelectable
             ? {
                 bgcolor: 'action.hover',

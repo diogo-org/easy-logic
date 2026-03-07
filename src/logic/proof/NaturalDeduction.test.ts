@@ -1964,4 +1964,125 @@ describe('NaturalDeduction', () => {
       expect(result).toBeNull()
     })
   })
+
+  describe('Bug 32 — validateProof depth check', () => {
+    it('rejects proof when lastStep.depth > 0 even if currentDepth is 0', () => {
+      const state: ProofState = {
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: 'p',
+            ruleKey: RULE_KEYS.ASSUME,
+            dependencies: [],
+            justificationKey: 'justificationAssumption',
+            depth: 1,
+          },
+        ],
+        currentDepth: 0,
+        goal: 'p',
+        premises: [],
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+      expect(nd.validateProof(state)).toBe(false)
+    })
+
+    it('accepts proof when both currentDepth and lastStep.depth are 0 and formula matches goal', () => {
+      const state: ProofState = {
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: 'p',
+            ruleKey: RULE_KEYS.PREMISE,
+            dependencies: [],
+            justificationKey: 'justificationPremise',
+            depth: 0,
+          },
+        ],
+        currentDepth: 0,
+        goal: 'p',
+        premises: ['p'],
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+      expect(nd.validateProof(state)).toBe(true)
+    })
+
+    it('rejects proof when formula matches goal but inside a subproof (both depths > 0)', () => {
+      const state: ProofState = {
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: 'p',
+            ruleKey: RULE_KEYS.ASSUME,
+            dependencies: [],
+            justificationKey: 'justificationAssumption',
+            depth: 1,
+          },
+        ],
+        currentDepth: 1,
+        goal: 'p',
+        premises: [],
+        currentSubproofId: '1',
+        nextStepInSubproof: [1, 2],
+        isComplete: false,
+      }
+      expect(nd.validateProof(state)).toBe(false)
+    })
+
+    it('uses AST-based comparison instead of normalizeFormula', () => {
+      // normalizeFormula strips parens, so "(p ^ q) -> r" and "p ^ (q -> r)" would
+      // incorrectly match. AST-based comparison should distinguish them.
+      const state: ProofState = {
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: '(p ^ q) -> r',
+            ruleKey: RULE_KEYS.PREMISE,
+            dependencies: [],
+            justificationKey: 'justificationPremise',
+            depth: 0,
+          },
+        ],
+        currentDepth: 0,
+        goal: 'p ^ (q -> r)',
+        premises: ['(p ^ q) -> r'],
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+      // These are structurally different formulas — normalizeFormula would wrongly
+      // equate them because it strips all parentheses.
+      expect(nd.validateProof(state)).toBe(false)
+    })
+
+    it('validates correctly with equivalent formulas that have different whitespace', () => {
+      const state: ProofState = {
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: 'p  ->  q',
+            ruleKey: RULE_KEYS.PREMISE,
+            dependencies: [],
+            justificationKey: 'justificationPremise',
+            depth: 0,
+          },
+        ],
+        currentDepth: 0,
+        goal: 'p -> q',
+        premises: ['p -> q'],
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+      expect(nd.validateProof(state)).toBe(true)
+    })
+  })
 })

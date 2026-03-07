@@ -197,6 +197,6 @@
   "justificationImplIntro": "→I ({{start}}-{{end}})",
   "justificationOrElim": "∨E ({{disjStep}}, {{leftStep}}, {{rightStep}})",
   "justificationLEM": "LEM",
-  "justificationDisjSyl": "DS {{step1}}, {{step2}}",
+  "justificationDisjSyl": "DS ({{step1}}, {{step2}})",
   "justificationPremise": "Premise"
 }
