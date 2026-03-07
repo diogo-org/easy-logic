@@ -51,6 +51,8 @@ import { useProofState } from '../hooks/useProofState'
 import { useCelebration } from '../hooks/useCelebration'
 import ProofStep from '../components/ProofStep'
 import RuleSelector from '../components/RuleSelector'
+import { FormulaDisplay } from '../components/FormulaDisplay'
+import { parseFormula } from '../logic/formula'
 
 const NAVIGATION_FALLBACK_DELAY_MS = 100
 
@@ -203,7 +205,7 @@ export default function ProofAssistantPage() {
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
                     {knowledgeBases.find(kb => kb.id === selectedKB)!.premises.map((premise, idx) => (
-                      <Chip key={idx} label={premise} size="small" sx={{ fontFamily: 'monospace' }} />
+                      <Chip key={idx} label={<FormulaDisplay latex={parseFormula(premise).latex} error={parseFormula(premise).error} />} size="small" sx={{ fontFamily: 'monospace', '& .MuiChip-label': { display: 'flex', alignItems: 'center' } }} />
                     ))}
                   </Box>
                 </Box>
@@ -231,9 +233,9 @@ export default function ProofAssistantPage() {
                   primary={t(goal.labelKey)}
                   secondary={
                     <>
-                      <Typography variant="body2" component="span" sx={{ fontFamily: 'monospace' }}>
-                        {goal.formula}
-                      </Typography>
+                      <Box component="span" sx={{ display: 'inline-block' }}>
+                        <FormulaDisplay latex={parseFormula(goal.formula).latex} error={parseFormula(goal.formula).error} />
+                      </Box>
                       <br />
                       <Typography variant="caption" color="text.secondary">
                         {t(goal.descriptionKey)}
@@ -337,9 +339,9 @@ export default function ProofAssistantPage() {
             <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' }, fontWeight: 700, color: '#2a1f35' }}>
               {t('goalToProve')}
             </Typography>
-            <Typography variant="h5" sx={{ fontFamily: 'monospace', fontSize: { xs: '1.1rem', sm: '1.5rem' }, wordBreak: 'break-word', fontWeight: 600, color: '#2a1f35' }}>
-              {proofState.goal}
-            </Typography>
+            <Box sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' }, fontWeight: 600, color: '#2a1f35' }}>
+              <FormulaDisplay latex={parseFormula(proofState.goal).latex} error={parseFormula(proofState.goal).error} />
+            </Box>
             {proofState.premises.length > 0 && (
               <Box sx={{ mt: 2 }}>
                 <Typography variant="body2" gutterBottom>
@@ -349,44 +351,48 @@ export default function ProofAssistantPage() {
                   {proofState.premises.map((premise, index) => (
                     <Chip
                       key={index}
-                      label={premise}
+                      label={<FormulaDisplay latex={parseFormula(premise).latex} error={parseFormula(premise).error} />}
                       size="small"
-                      sx={{ fontFamily: 'monospace', bgcolor: 'rgba(200, 191, 224, 0.3)', color: '#2a1f35', fontWeight: 600 }}
+                      sx={{ fontFamily: 'monospace', bgcolor: 'rgba(200, 191, 224, 0.3)', color: '#2a1f35', fontWeight: 600, '& .MuiChip-label': { display: 'flex', alignItems: 'center' } }}
                     />
                   ))}
                 </Box>
               </Box>
             )}
-            {proofState.isComplete && (
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  gap: { xs: 1, sm: 3 }, 
-                  mt: { xs: 2, sm: 3 },
-                  p: { xs: 2, sm: 3 },
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  borderRadius: 3,
-                  border: '3px solid rgba(255,255,255,0.5)',
-                }}
-              >
-                <Star sx={{ fontSize: { xs: 30, sm: 50 }, color: 'gold', display: { xs: 'none', sm: 'block' } }} />
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" sx={{ fontWeight: 'bold', textShadow: '2px 2px 4px rgba(0,0,0,0.3)', fontSize: { xs: '1.2rem', sm: '2.125rem' } }}>
-                    🎉🎊 {t('proofComplete')} 🎊🎉
-                  </Typography>
-                  <Typography variant="h2" sx={{ my: 1, fontSize: { xs: '2rem', sm: '3.75rem' } }}>
-                    😄🏆😄
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontSize: { xs: '0.9rem', sm: '1.25rem' } }}>
-                    {t('logicMaster')} ⭐
-                  </Typography>
-                </Box>
-                <Star sx={{ fontSize: { xs: 30, sm: 50 }, color: 'gold', display: { xs: 'none', sm: 'block' } }} />
-              </Box>
-            )}
           </Paper>
+
+          {/* Proof Complete Banner - separate from Goal display */}
+          {proofState.isComplete && (
+            <Paper 
+              elevation={0} 
+              sx={{ 
+                p: { xs: 2, sm: 3 }, 
+                mb: { xs: 2, sm: 3 }, 
+                bgcolor: '#d4cbeb', 
+                border: 'none', 
+                borderRadius: '12px', 
+                boxShadow: 'none',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                gap: { xs: 1, sm: 3 }, 
+              }}
+            >
+              <Star sx={{ fontSize: { xs: 30, sm: 50 }, color: 'gold', display: { xs: 'none', sm: 'block' } }} />
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="h4" sx={{ fontWeight: 'bold', textShadow: '2px 2px 4px rgba(0,0,0,0.3)', fontSize: { xs: '1.2rem', sm: '2.125rem' }, color: '#2a1f35' }}>
+                  🎉🎊 {t('proofComplete')} 🎊🎉
+                </Typography>
+                <Typography variant="h2" sx={{ my: 1, fontSize: { xs: '2rem', sm: '3.75rem' } }}>
+                  😄🏆😄
+                </Typography>
+                <Typography variant="h6" sx={{ fontSize: { xs: '0.9rem', sm: '1.25rem' }, color: '#2a1f35' }}>
+                  {t('logicMaster')} ⭐
+                </Typography>
+              </Box>
+              <Star sx={{ fontSize: { xs: 30, sm: 50 }, color: 'gold', display: { xs: 'none', sm: 'block' } }} />
+            </Paper>
+          )}
 
           {/* 🎆🎆🎆 THE BIG BANG CELEBRATION OVERLAY 🎆🎆🎆 */}
           <Backdrop
@@ -649,14 +655,16 @@ export default function ProofAssistantPage() {
             )}
           </Paper>
 
-          {/* Rule Selector */}
-          <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, bgcolor: '#ffffff', border: '1px solid #e0dce8', borderRadius: '12px', boxShadow: 'none' }}>
-            <RuleSelector
-              rules={applicableRules}
-              onRuleSelect={handleRuleSelect}
-              disabled={proofState.isComplete}
-            />
-          </Paper>
+          {/* Rule Selector - hidden when proof is complete */}
+          {!proofState.isComplete && (
+            <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, bgcolor: '#ffffff', border: '1px solid #e0dce8', borderRadius: '12px', boxShadow: 'none' }}>
+              <RuleSelector
+                rules={applicableRules}
+                onRuleSelect={handleRuleSelect}
+                disabled={proofState.isComplete}
+              />
+            </Paper>
+          )}
         </Box>
       )}
 
