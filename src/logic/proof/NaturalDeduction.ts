@@ -214,7 +214,7 @@ export class NaturalDeduction implements ProofSystem {
 
     let maxSubIndex = 0
     for (const step of steps) {
-      if (step.lineNumber.startsWith(prefix + '.')) {
+      if (step.lineNumber.startsWith(`${prefix}.`)) {
         const rest = step.lineNumber.slice(prefix.length + 1)
         const firstSub = Number.parseInt(rest.split('.')[0], 10)
         if (!Number.isNaN(firstSub) && firstSub > maxSubIndex) {
