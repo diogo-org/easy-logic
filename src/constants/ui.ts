@@ -7,6 +7,8 @@ export const LAYOUT = {
   DEPTH_INDENT_PX: 16,
   SMALL_SPACING_PX: 4,
   RULE_BUTTON_MIN_WIDTH: 120,
+  /** MUI spacing units for checkbox-aligned left padding */
+  CHECKBOX_PADDING: 4,
 } as const
 
 // Fitch-style subproof boxing constants

@@ -598,7 +598,7 @@ export default function ProofAssistantPage() {
                   return proofState.steps.map((step, idx) => {
                     const subproofDepths = getContainingSubproofDepths(idx, ranges)
                     // Determine if this step is first/last in its innermost subproof
-                    const innerDepth = subproofDepths.length > 0 ? subproofDepths[subproofDepths.length - 1] : undefined // eslint-disable-line unicorn/prefer-at
+                    const innerDepth = subproofDepths.length > 0 ? subproofDepths[subproofDepths.length - 1] : undefined
                     const innerRange = innerDepth === undefined
                       ? undefined
                       : ranges.find(r => r.depth === innerDepth && idx >= r.startIndex && idx <= r.endIndex)

@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { ProofStep as ProofStepType, RULE_KEYS } from '../logic/proof'
 import { FormulaDisplay } from './FormulaDisplay'
 import { parseFormula } from '../logic/formula'
-import { OPACITY, FITCH } from '../constants/ui'
+import { OPACITY, FITCH, LAYOUT } from '../constants/ui'
 
 function getBgColor(isSelected: boolean, isPremise: boolean, isBranchStart: boolean): string {
   if (isSelected) {return 'action.selected'}
@@ -29,7 +29,7 @@ function getBarBorderRadius(
   depth: number,
   depths: readonly number[],
 ): string | number {
-  const isInnermost = depth === depths[depths.length - 1] // eslint-disable-line unicorn/prefer-at
+  const isInnermost = depth === depths[depths.length - 1]
   if (isFirst && isInnermost) {
     return `${FITCH.BAR_RADIUS_PX}px ${FITCH.BAR_RADIUS_PX}px 0 0`
   }
@@ -151,7 +151,7 @@ export default function ProofStep({
           minWidth: { xs: 'auto', sm: 120 },
           width: { xs: '100%', sm: 'auto' },
           mt: { xs: OPACITY.HALF, sm: 0 },
-          pl: { xs: isSelectable ? 4 : 0, sm: 0 },
+          pl: { xs: isSelectable ? LAYOUT.CHECKBOX_PADDING : 0, sm: 0 },
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'flex-end',

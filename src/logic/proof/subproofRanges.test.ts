@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { computeSubproofRanges, getContainingSubproofDepths } from './subproofRanges'
-import { RULE_KEYS } from './types'
-import type { ProofStep } from './types'
+import { RULE_KEYS, type ProofStep } from './types'
 
 function makeStep(overrides: Partial<ProofStep> & { id: number; depth: number }): ProofStep {
   return {
