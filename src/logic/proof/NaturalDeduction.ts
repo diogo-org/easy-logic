@@ -121,37 +121,78 @@ export class NaturalDeduction implements ProofSystem {
   }
 
   /**
-   * Compute the next line number based on state
-   * - At depth 0: sequential (1, 2, 3...)
-   * - Opening subproof: current.1 (e.g., if at line 3 and opening subproof, next is 3.1)
-   * - Inside subproof: sequential in that subproof (3.1, 3.2, 3.3...)
-   * - Closing subproof: return to parent depth numbering
+   * Compute the next line number based on state using Dewey-style numbering.
+   *
+   * Convention:
+   * - Top-level (depth 0) steps: 1, 2, 3, ...
+   * - Assumption opening a subproof consumes the next parent-level number
+   *   (e.g., "3" at depth 0 even though the step lives at depth 1).
+   * - Steps INSIDE a subproof after its assumption: assumption.lineNumber + ".N"
+   *   (e.g., "3.1", "3.2", "3.3").
+   * - Closing a subproof (→I) gets the next number at the parent level.
+   * - Nested subproofs follow the same pattern recursively
+   *   (e.g., "3.2.1" for a step inside a sub-subproof opened at "3.2").
    */
-  private computeLineNumber(state: ProofState, isNewSubproof: boolean): string {
+  private computeLineNumber(state: ProofState, _isNewSubproof: boolean): string {
     if (state.steps.length === 0) {
       return '1'
     }
 
-    if (isNewSubproof) {
-      // Starting a new subproof - use last step's number + ".1"
-      const lastStep = state.steps[state.steps.length - 1]
-      const lastLineNumber = lastStep.lineNumber || String(state.steps.length)
-      return `${lastLineNumber}.1`
+    return this.getNextNumberAtDepth(state.steps, state.currentDepth)
+  }
+
+  /**
+   * Compute the next Dewey-style line number at a given depth level.
+   *
+   * At depth 0: scans the first segment of every existing lineNumber to find
+   *   the global maximum, then returns max + 1.
+   * At depth > 0: finds the active (unclosed) assumption at this depth,
+   *   uses its lineNumber as a prefix, and returns prefix.{max + 1}
+   *   where max is the highest first sub-segment among all lineNumbers
+   *   that start with that prefix.
+   */
+  private getNextNumberAtDepth(steps: ProofStep[], depth: number): string {
+    if (depth === 0) {
+      let max = 0
+      for (const step of steps) {
+        const first = Number.parseInt(step.lineNumber.split('.')[0], 10)
+        if (!Number.isNaN(first) && first > max) {
+          max = first
+        }
+      }
+      return String(max + 1)
     }
 
-    // Find the last step at our target depth
-    const lastStepAtDepth = [...state.steps].reverse().find(s => s.depth === state.currentDepth)
-    
-    if (lastStepAtDepth && lastStepAtDepth.lineNumber) {
-      // Increment the last segment of the line number
-      const parts = lastStepAtDepth.lineNumber.split('.')
-      const lastPart = parseInt(parts[parts.length - 1], 10)
-      parts[parts.length - 1] = String(lastPart + 1)
-      return parts.join('.')
+    // depth > 0 — find the active (unclosed) assumption at this depth
+    const closedAssumptionIds = new Set(
+      steps
+        .filter(s => s.ruleKey === RULE_KEYS.IMPL_INTRO && s.dependencies.length >= 1)
+        .map(s => s.dependencies[0]),
+    )
+
+    const enclosingAssumption = [...steps].reverse().find(
+      s => s.depth === depth && s.isSubproofStart && !closedAssumptionIds.has(s.id),
+    )
+
+    if (!enclosingAssumption) {
+      // Fallback: no enclosing assumption found (should not happen in valid state)
+      return String(steps.length + 1)
     }
 
-    // Fallback: just use sequential
-    return String(state.steps.length + 1)
+    const prefix = enclosingAssumption.lineNumber
+
+    let maxSubIndex = 0
+    for (const step of steps) {
+      if (step.lineNumber.startsWith(prefix + '.')) {
+        const rest = step.lineNumber.slice(prefix.length + 1)
+        const firstSub = Number.parseInt(rest.split('.')[0], 10)
+        if (!Number.isNaN(firstSub) && firstSub > maxSubIndex) {
+          maxSubIndex = firstSub
+        }
+      }
+    }
+
+    return `${prefix}.${maxSubIndex + 1}`
   }
 
   applyRule(
