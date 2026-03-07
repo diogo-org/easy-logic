@@ -63,7 +63,7 @@ describe('Bug Fixes - Critical Issues', () => {
           },
           {
             id: 2,
-            lineNumber: '2',
+            lineNumber: '1.1',
             formula: 'p',
             ruleKey: RULE_KEYS.ASSUME,
             dependencies: [],
@@ -73,11 +73,11 @@ describe('Bug Fixes - Critical Issues', () => {
           },
           {
             id: 3,
-            lineNumber: '2.1',
+            lineNumber: '1.2',
             formula: 'r',
-            ruleKey: RULE_KEYS.ASSUME,
+            ruleKey: RULE_KEYS.PREMISE,
             dependencies: [],
-            justificationKey: 'justificationAssumption',
+            justificationKey: 'justificationPremise',
             depth: 1,
           },
         ],
@@ -91,8 +91,8 @@ describe('Bug Fixes - Critical Issues', () => {
       const result = nd.applyRule(implIntroRule, state, [])
 
       expect(result).not.toBeNull()
-      // After closing subproof, next line should be 3 (continuing from parent)
-      expect(result?.lineNumber).toBe('3')
+      // After closing subproof, next line should be 2 (continuing from parent depth 0 after "1")
+      expect(result?.lineNumber).toBe('2')
       expect(result?.depth).toBe(0)
     })
   })
@@ -241,6 +241,176 @@ describe('Bug Fixes - Critical Issues', () => {
       expect(innerResult).not.toBeNull()
       expect(innerResult?.formula).toBe('(q) -> (r)')
       expect(innerResult?.depth).toBe(1)  // Back to depth 1
+    })
+  })
+
+  describe('Bug #11: →I Conclusion Step Always Displays Line Number "2"', () => {
+    it('should assign correct line number after multi-step subproof (no premises)', () => {
+      // Proof of: (p ^ q) ^ (q -> r) -> r
+      // Steps 1–5 inside subproof, →I should be step 6 (not "2")
+      const state: ProofState = {
+        goal: '(p ^ q) ^ (q -> r) -> r',
+        premises: [],
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: '(p ^ q) ^ (q -> r)',
+            ruleKey: RULE_KEYS.ASSUME,
+            dependencies: [],
+            justificationKey: 'justificationAssumption',
+            depth: 1,
+            isSubproofStart: true,
+          },
+          {
+            id: 2,
+            lineNumber: '2',
+            formula: 'q -> r',
+            ruleKey: RULE_KEYS.AND_ELIM_RIGHT,
+            dependencies: [1],
+            justificationKey: 'justificationAndElimRight',
+            depth: 1,
+          },
+          {
+            id: 3,
+            lineNumber: '3',
+            formula: 'p ^ q',
+            ruleKey: RULE_KEYS.AND_ELIM_LEFT,
+            dependencies: [1],
+            justificationKey: 'justificationAndElimLeft',
+            depth: 1,
+          },
+          {
+            id: 4,
+            lineNumber: '4',
+            formula: 'q',
+            ruleKey: RULE_KEYS.AND_ELIM_RIGHT,
+            dependencies: [3],
+            justificationKey: 'justificationAndElimRight',
+            depth: 1,
+          },
+          {
+            id: 5,
+            lineNumber: '5',
+            formula: 'r',
+            ruleKey: RULE_KEYS.MODUS_PONENS,
+            dependencies: [2, 4],
+            justificationKey: 'justificationMP',
+            depth: 1,
+          },
+        ],
+        currentDepth: 1,
+        currentSubproofId: '',
+        nextStepInSubproof: [6],
+        isComplete: false,
+      }
+
+      const implIntroRule = nd.getRules().find((r) => r.id === 'impl_intro')!
+      const result = nd.applyRule(implIntroRule, state, [])
+
+      expect(result).not.toBeNull()
+      expect(result?.formula).toBe('((p ^ q) ^ (q -> r)) -> (r)')
+      expect(result?.lineNumber).toBe('6')  // Bug: was showing "2" instead of "6"
+      expect(result?.depth).toBe(0)
+    })
+
+    it('should assign correct line number after 2-step subproof (no premises)', () => {
+      // Proof of: p ^ q -> q
+      // Steps 1–2 inside subproof, →I should be step 3
+      const state: ProofState = {
+        goal: 'p ^ q -> q',
+        premises: [],
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: 'p ^ q',
+            ruleKey: RULE_KEYS.ASSUME,
+            dependencies: [],
+            justificationKey: 'justificationAssumption',
+            depth: 1,
+            isSubproofStart: true,
+          },
+          {
+            id: 2,
+            lineNumber: '2',
+            formula: 'q',
+            ruleKey: RULE_KEYS.AND_ELIM_RIGHT,
+            dependencies: [1],
+            justificationKey: 'justificationAndElimRight',
+            depth: 1,
+          },
+        ],
+        currentDepth: 1,
+        currentSubproofId: '',
+        nextStepInSubproof: [3],
+        isComplete: false,
+      }
+
+      const implIntroRule = nd.getRules().find((r) => r.id === 'impl_intro')!
+      const result = nd.applyRule(implIntroRule, state, [])
+
+      expect(result).not.toBeNull()
+      expect(result?.lineNumber).toBe('3')  // Bug: was showing "2" instead of "3"
+      expect(result?.depth).toBe(0)
+    })
+
+    it('should assign correct line number with premises before subproof', () => {
+      // Premises at depth 0, then a subproof with multiple steps
+      const state: ProofState = {
+        goal: 'p -> q',
+        premises: ['a'],
+        steps: [
+          {
+            id: 1,
+            lineNumber: '1',
+            formula: 'a',
+            ruleKey: RULE_KEYS.PREMISE,
+            dependencies: [],
+            justificationKey: 'justificationPremise',
+            depth: 0,
+          },
+          {
+            id: 2,
+            lineNumber: '1.1',
+            formula: 'p',
+            ruleKey: RULE_KEYS.ASSUME,
+            dependencies: [],
+            justificationKey: 'justificationAssumption',
+            depth: 1,
+            isSubproofStart: true,
+          },
+          {
+            id: 3,
+            lineNumber: '1.2',
+            formula: 'q',
+            ruleKey: RULE_KEYS.PREMISE,
+            dependencies: [],
+            justificationKey: 'justificationPremise',
+            depth: 1,
+          },
+          {
+            id: 4,
+            lineNumber: '1.3',
+            formula: 'q',
+            ruleKey: RULE_KEYS.PREMISE,
+            dependencies: [],
+            justificationKey: 'justificationPremise',
+            depth: 1,
+          },
+        ],
+        currentDepth: 1,
+        currentSubproofId: '',
+        nextStepInSubproof: [5],
+        isComplete: false,
+      }
+
+      const implIntroRule = nd.getRules().find((r) => r.id === 'impl_intro')!
+      const result = nd.applyRule(implIntroRule, state, [])
+
+      expect(result).not.toBeNull()
+      expect(result?.lineNumber).toBe('2')  // Next at depth 0 after "1"
+      expect(result?.depth).toBe(0)
     })
   })
 })
