@@ -8,7 +8,7 @@ import { ProofSystem, Rule, ProofState, ProofStep, ApplicableRule, KnowledgeBase
 import { tokenizeAndParse, FormulaType } from '../formula/common'
 import { knowledgeBases } from './knowledgeBases'
 import { naturalDeductionRules } from './rules'
-import { formulaToString, isFullyParenthesized, parseImplication, normalizeFormula } from './formulaHelpers'
+import { formulaToString, isFullyParenthesized, parseImplication, formulasMatch } from './formulaHelpers'
 
 /** ∨ Elimination requires exactly 3 steps: P∨Q, P→C, Q→C */
 const OR_ELIM_REQUIRED_STEPS = 3
@@ -465,7 +465,7 @@ export class NaturalDeduction implements ProofSystem {
     const leftImpl = ordering.leftFirst ? impl1 : impl2
     const rightImpl = ordering.leftFirst ? impl2 : impl1
 
-    if (normalizeFormula(leftImpl.consequent) !== normalizeFormula(rightImpl.consequent)) {
+    if (!formulasMatch(leftImpl.consequent, rightImpl.consequent)) {
       return null
     }
 
@@ -484,14 +484,14 @@ export class NaturalDeduction implements ProofSystem {
     rightDisjunct: string,
   ): { leftFirst: boolean } | null {
     if (
-      normalizeFormula(impl1.antecedent) === normalizeFormula(leftDisjunct) &&
-      normalizeFormula(impl2.antecedent) === normalizeFormula(rightDisjunct)
+      formulasMatch(impl1.antecedent, leftDisjunct) &&
+      formulasMatch(impl2.antecedent, rightDisjunct)
     ) {
       return { leftFirst: true }
     }
     if (
-      normalizeFormula(impl2.antecedent) === normalizeFormula(leftDisjunct) &&
-      normalizeFormula(impl1.antecedent) === normalizeFormula(rightDisjunct)
+      formulasMatch(impl2.antecedent, leftDisjunct) &&
+      formulasMatch(impl1.antecedent, rightDisjunct)
     ) {
       return { leftFirst: false }
     }
@@ -522,7 +522,7 @@ export class NaturalDeduction implements ProofSystem {
     if (!impl) {return null}
 
     // Check if stepP matches the antecedent
-    if (normalizeFormula(stepP.formula) === normalizeFormula(impl.antecedent)) {
+    if (formulasMatch(stepP.formula, impl.antecedent)) {
       return impl.consequent
     }
     return null
@@ -540,7 +540,7 @@ export class NaturalDeduction implements ProofSystem {
       const negatedFormula = formulaToString(parsedNegQ.left)
       
       // Check if negatedFormula matches the consequent
-      if (normalizeFormula(negatedFormula) === normalizeFormula(impl.consequent)) {
+      if (formulasMatch(negatedFormula, impl.consequent)) {
         // Wrap antecedent in parentheses to preserve formula structure when negating
         return `~(${impl.antecedent})`
       }
@@ -570,12 +570,12 @@ export class NaturalDeduction implements ProofSystem {
       const negatedFormula = formulaToString(parsedNeg.left)
 
       // Check if negatedFormula matches left disjunct → return right
-      if (normalizeFormula(negatedFormula) === normalizeFormula(leftDisjunct)) {
+      if (formulasMatch(negatedFormula, leftDisjunct)) {
         return rightDisjunct
       }
 
       // Check if negatedFormula matches right disjunct → return left
-      if (normalizeFormula(negatedFormula) === normalizeFormula(rightDisjunct)) {
+      if (formulasMatch(negatedFormula, rightDisjunct)) {
         return leftDisjunct
       }
 
@@ -592,10 +592,12 @@ export class NaturalDeduction implements ProofSystem {
     
     // Proof is complete if:
     // 1. We're at depth 0 (no open assumptions)
-    // 2. The last step matches the goal
+    // 2. The last step itself is at depth 0 (defense-in-depth against desync)
+    // 3. The last step matches the goal (AST-based comparison)
     return (
       state.currentDepth === 0 &&
-      normalizeFormula(lastStep.formula) === normalizeFormula(state.goal)
+      lastStep.depth === 0 &&
+      formulasMatch(lastStep.formula, state.goal)
     )
   }
 

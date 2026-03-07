@@ -33,14 +33,15 @@ async function enterCustomGoal(page: Page, formula: string) {
 }
 
 /**
- * Select proof steps by their 1-based line-number position.
+ * Select proof steps by their Dewey-style line number (e.g. '1', '1.1', '2').
  * Each step row is a Paper element whose text starts with "N."
  */
-async function selectSteps(page: Page, ...positions: number[]) {
-  for (const pos of positions) {
+async function selectSteps(page: Page, ...lineNumbers: string[]) {
+  for (const ln of lineNumbers) {
+    const escaped = ln.replace(/\./g, '\\.')
     const stepRow = page
       .locator('.MuiPaper-root')
-      .filter({ hasText: new RegExp(`^\\s*${pos}\\.`) })
+      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.\\s`) })
       .first()
     await stepRow.click()
   }
@@ -124,31 +125,31 @@ test.describe('Level 4 — Disjunction Elimination (Proof by Cases)', () => {
     await applyRuleWithInput(page, 'Assume', '(p | q) ^ ~p ^ (q -> r)')
 
     // Step 2: ∧ Elimination (Left) on step 1 → (p | q) ^ ~p
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 3: ∧ Elimination (Right) on step 1 → q -> r
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 4: ∧ Elimination (Left) on step 2 → p | q
-    await selectSteps(page, 2)
+    await selectSteps(page, '2')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 5: ∧ Elimination (Right) on step 2 → ~p
-    await selectSteps(page, 2)
+    await selectSteps(page, '2')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 6: ∨ Elimination (Proof by Cases) on step 4 → p | q (setup)
-    await selectSteps(page, 4)
+    await selectSteps(page, '4')
     await applyRule(page, '∨ Elimination (Proof by Cases)')
 
     // Step 7: Disjunctive Syllogism on steps 6 (p | q) and 5 (~p) → q
-    await selectSteps(page, 6, 5)
+    await selectSteps(page, '6', '5')
     await applyRule(page, 'Disjunctive Syllogism')
 
     // Step 8: Modus Ponens on steps 7 (q) and 3 (q -> r) → r
-    await selectSteps(page, 7, 3)
+    await selectSteps(page, '7', '3')
     await applyRule(page, 'Modus Ponens')
 
     // Step 9: → Introduction — closes subproof
@@ -190,27 +191,27 @@ test.describe('Level 4 — Disjunction Elimination (Proof by Cases)', () => {
     await applyRuleWithInput(page, 'Assume', '(p | q) ^ ~~~q')
 
     // Step 2: ∧ Elimination (Left) on step 1 → p | q
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 3: ∧ Elimination (Right) on step 1 → ~~~q
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 4: Double Negation on step 3 → ~q
-    await selectSteps(page, 3)
+    await selectSteps(page, '3')
     await applyRule(page, 'Double Negation')
 
     // Step 5: ∨ Elimination (Proof by Cases) on step 2 → p | q (setup)
-    await selectSteps(page, 2)
+    await selectSteps(page, '2')
     await applyRule(page, '∨ Elimination (Proof by Cases)')
 
     // Step 6: Disjunctive Syllogism on steps 5 (p | q) and 4 (~q) → p
-    await selectSteps(page, 5, 4)
+    await selectSteps(page, '5', '4')
     await applyRule(page, 'Disjunctive Syllogism')
 
     // Step 7: ∨ Introduction (Right) on step 6 (p), input q → q | p
-    await selectSteps(page, 6)
+    await selectSteps(page, '6')
     await applyRuleWithInput(page, '∨ Introduction (Right)', 'q')
 
     // Step 8: → Introduction — closes subproof
@@ -255,36 +256,36 @@ test.describe('Level 4 — Disjunction Elimination (Proof by Cases)', () => {
     await applyRuleWithInput(page, 'Assume', '(p | q) ^ r ^ ~p')
 
     // Step 2: ∧ Elimination (Left) on step 1 → (p | q) ^ r
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 3: ∧ Elimination (Right) on step 1 → ~p
-    await selectSteps(page, 1)
+    await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 4: ∧ Elimination (Left) on step 2 → p | q
-    await selectSteps(page, 2)
+    await selectSteps(page, '2')
     await applyRule(page, '∧ Elimination (Left)')
 
     // Step 5: ∧ Elimination (Right) on step 2 → r
-    await selectSteps(page, 2)
+    await selectSteps(page, '2')
     await applyRule(page, '∧ Elimination (Right)')
 
     // Step 6: ∨ Elimination (Proof by Cases) on step 4 → p | q (setup)
-    await selectSteps(page, 4)
+    await selectSteps(page, '4')
     await applyRule(page, '∨ Elimination (Proof by Cases)')
 
     // Step 7: Disjunctive Syllogism on steps 6 (p | q) and 3 (~p) → q
-    await selectSteps(page, 6, 3)
+    await selectSteps(page, '6', '3')
     await applyRule(page, 'Disjunctive Syllogism')
 
     // Step 8: ∧ Introduction on steps 7 (q) and 5 (r) → q ^ r
-    await selectSteps(page, 7, 5)
+    await selectSteps(page, '7', '5')
     await applyRule(page, '∧ Introduction')
 
     // Step 9: ∨ Introduction (Right) on step 8 (q ^ r), input p ^ r
     //         → (p ^ r) | (q ^ r)
-    await selectSteps(page, 8)
+    await selectSteps(page, '8')
     await applyRuleWithInput(page, '∨ Introduction (Right)', 'p ^ r')
 
     // Step 10: → Introduction — closes subproof

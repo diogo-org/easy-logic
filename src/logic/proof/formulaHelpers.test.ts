@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formulaToString, isFullyParenthesized, parseImplication, normalizeFormula } from './formulaHelpers'
+import { formulaToString, isFullyParenthesized, parseImplication, normalizeFormula, formulasMatch } from './formulaHelpers'
 import { FormulaType, type Formula } from '../formula/types'
 
 describe('formulaHelpers', () => {
@@ -281,6 +281,56 @@ describe('formulaHelpers', () => {
 
     it('handles complex nested formula', () => {
       expect(normalizeFormula('((P ^ Q) -> (R | S)) <-> (~T | F)')).toBe('p^q->r|s<->~t|f')
+    })
+  })
+
+  describe('formulasMatch', () => {
+    it('returns true for identical formulas', () => {
+      expect(formulasMatch('p -> q', 'p -> q')).toBe(true)
+    })
+
+    it('returns true for formulas differing only by whitespace', () => {
+      expect(formulasMatch('p->q', 'p -> q')).toBe(true)
+    })
+
+    it('returns true for formulas differing only by redundant parens', () => {
+      expect(formulasMatch('(p) -> (q)', 'p -> q')).toBe(true)
+    })
+
+    it('returns FALSE for structurally different formulas that normalizeFormula conflates', () => {
+      // THIS IS THE CRITICAL TEST — old normalizeFormula would say these are equal
+      expect(formulasMatch('(p -> q) ^ r', 'p -> (q ^ r)')).toBe(false)
+    })
+
+    it('returns FALSE for p ^ (q | r) vs (p ^ q) | r', () => {
+      expect(formulasMatch('p ^ (q | r)', '(p ^ q) | r')).toBe(false)
+    })
+
+    it('distinguishes T (TRUE) from t (variable)', () => {
+      expect(formulasMatch('T', 't')).toBe(false)
+    })
+
+    it('returns false for unparseable formulas', () => {
+      expect(formulasMatch('not valid!!!', 'p')).toBe(false)
+    })
+
+    it('returns true for complex equivalent formulas with different spacing', () => {
+      expect(formulasMatch('(p ^ q) -> (r | s)', '(p^q)->(r|s)')).toBe(true)
+    })
+
+    it('returns false when both formulas are unparseable', () => {
+      expect(formulasMatch('!!!', '???')).toBe(false)
+    })
+
+    it('handles negation correctly', () => {
+      expect(formulasMatch('~p', '~p')).toBe(true)
+      expect(formulasMatch('~p', 'p')).toBe(false)
+      expect(formulasMatch('~p', '~q')).toBe(false)
+    })
+
+    it('handles biconditional correctly', () => {
+      expect(formulasMatch('p <-> q', 'p <-> q')).toBe(true)
+      expect(formulasMatch('p <-> q', 'q <-> p')).toBe(false)
     })
   })
 })
