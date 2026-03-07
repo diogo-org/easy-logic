@@ -368,12 +368,9 @@ export class NaturalDeduction implements ProofSystem {
 
     if (!assumption || !conclusion) {return null}
 
-    const lineParts = assumption.lineNumber.split('.')
-    const lastPartIndex = lineParts.length - 1
-    const lastPart = parseInt(lineParts[lastPartIndex], 10)
-    if (Number.isNaN(lastPart)) {return null}
-    lineParts[lastPartIndex] = String(lastPart + 1)
-    const lineNumber = lineParts.join('.')
+    // Compute the next line number at the parent depth level
+    const parentState = { ...state, currentDepth: state.currentDepth - 1 }
+    const lineNumber = this.computeLineNumber(parentState, false)
 
     return {
       id: newId,

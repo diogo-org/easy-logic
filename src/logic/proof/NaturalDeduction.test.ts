@@ -458,7 +458,7 @@ describe('NaturalDeduction', () => {
       expect(result).not.toBeNull()
       expect(result?.formula).toBe('(q) -> (q)')
       expect(result?.dependencies).toEqual([4, 5])
-      expect(result?.lineNumber).toBe('5')
+      expect(result?.lineNumber).toBe('4')  // Next at parent depth 0 after line "3"
     })
 
     it('uses hierarchical numbering when closing nested subproofs', () => {
@@ -497,7 +497,7 @@ describe('NaturalDeduction', () => {
       const result = nd.applyRule(implIntroRule, state, [])
 
       expect(result).not.toBeNull()
-      expect(result?.lineNumber).toBe('1.2')
+      expect(result?.lineNumber).toBe('2')  // Next at parent depth 1 after line "1"
       expect(result?.depth).toBe(1)
     })
 
