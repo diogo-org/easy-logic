@@ -39,7 +39,8 @@ function runTestsWithCoverage(stepLabel) {
   try {
     const testOutput = execSync('npx vitest run --coverage', {
       stdio: 'pipe',
-      encoding: 'utf-8'
+      encoding: 'utf-8',
+      shell: true,
     });
 
     const { coverage, skippedTests } = parseVitestRunOutput(testOutput);
@@ -91,6 +92,7 @@ try {
     stdio: 'pipe',
     encoding: 'utf-8',
     timeout: 60000,
+    shell: true,
   });
   printStatus(true, 'Bootstrap update applied (or already up to date)');
 } catch {
@@ -343,7 +345,8 @@ try {
   // Run jscpd - it will exit with error code if threshold is exceeded
   execSync('npx jscpd src --reporters json --silent', {
     stdio: 'pipe',
-    encoding: 'utf-8'
+    encoding: 'utf-8',
+    shell: true,
   });
 
   // Read the report file
@@ -476,7 +479,8 @@ console.log('Step 10: TypeScript type checking...');
 try {
   execSync('npx tsc --noEmit', {
     stdio: 'pipe',
-    encoding: 'utf-8'
+    encoding: 'utf-8',
+    shell: true,
   });
   printStatus(true, 'TypeScript type check passed');
 } catch (error) {
@@ -522,7 +526,8 @@ console.log('Step 12: Checking for dead code...');
 try {
   execSync('npx knip', {
     stdio: 'pipe',
-    encoding: 'utf-8'
+    encoding: 'utf-8',
+    shell: true,
   });
   printStatus(true, 'No dead code detected');
 } catch (error) {
@@ -569,6 +574,7 @@ console.log('Step 13: Running SonarJS analysis...');
     output = execSync('npx eslint src scripts .husky --format stylish', { // NOSONAR
       stdio: 'pipe',
       encoding: 'utf-8',
+      shell: true,
     });
   } catch (error) {
     output = (error.stdout || '') + (error.stderr || '');
