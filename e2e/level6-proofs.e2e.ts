@@ -42,7 +42,7 @@ async function selectSteps(page: Page, ...lineNumbers: string[]) {
     const escaped = ln.replace(/\./g, '\\.')
     const stepRow = page
       .locator('.MuiPaper-root')
-      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.\\s`) })
+      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.`) })
       .first()
     await stepRow.click()
   }
@@ -113,10 +113,9 @@ test.describe('Level 6 — LEM + Complex Logic', () => {
   //     3. ∧ Elim Right → ~~p                             [depth 1]
   //     4. ∧ Elim Left on (2) → p -> q                    [depth 1]
   //     5. LEM (p) → p | ~p                               [depth 1]
-  //     6. ∨ Elimination on (5) → p | ~p  (setup)         [depth 1]
-  //     7. DS (6, 3) → p                                  [depth 1]
-  //     8. MP (7, 4) → q                                  [depth 1]
-  //     9. → Introduction                                 [depth 0]
+  //     6. DS (5, 3) → p                                  [depth 1]
+  //     7. MP (6, 4) → q                                  [depth 1]
+  //     8. → Introduction                                 [depth 0]
   // -----------------------------------------------------------------------
   test('22. Constructive Dilemma — derive Q via LEM + DS + MP', async ({
     page,
@@ -138,26 +137,22 @@ test.describe('Level 6 — LEM + Complex Logic', () => {
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 4: ∧ Elimination (Left) on step 2 → p -> q
-    await selectSteps(page, '2')
+    // Step 1.3: ∧ Elimination (Left) on step 1.1 → p -> q
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 5: LEM (p) → p | ~p
+    // Step 1.4: LEM (p) → p | ~p
     await applyRuleWithInput(page, 'Law of Excluded Middle', 'p')
 
-    // Step 6: ∨ Elimination (Proof by Cases) on step 5 → p | ~p (setup)
-    await selectSteps(page, '5')
-    await applyRule(page, '∨ Elimination (Proof by Cases)')
-
-    // Step 7: Disjunctive Syllogism on steps 6 (p | ~p) and 3 (~~p) → p
-    await selectSteps(page, '6', '3')
+    // Step 1.5: Disjunctive Syllogism on steps 1.4 (p | ~p) and 1.2 (~~p) → p
+    await selectSteps(page, '1.4', '1.2')
     await applyRule(page, 'Disjunctive Syllogism')
 
-    // Step 8: Modus Ponens on steps 7 (p) and 4 (p -> q) → q
-    await selectSteps(page, '7', '4')
+    // Step 1.6: Modus Ponens on steps 1.5 (p) and 1.3 (p -> q) → q
+    await selectSteps(page, '1.5', '1.3')
     await applyRule(page, 'Modus Ponens')
 
-    // Step 9: → Introduction — closes subproof
+    // Step 8: → Introduction — closes subproof
     await applyRule(page, '→ Introduction')
 
     await expectProofComplete(page)
@@ -179,9 +174,8 @@ test.describe('Level 6 — LEM + Complex Logic', () => {
   //     1. Assume ~~~~p                                   [depth 1]
   //     2. Double Negation on (1) → ~~p                   [depth 1]
   //     3. LEM (p) → p | ~p                               [depth 1]
-  //     4. ∨ Elimination on (3) → p | ~p  (setup)         [depth 1]
-  //     5. DS (4, 2) → p                                  [depth 1]
-  //     6. → Introduction                                 [depth 0]
+  //     4. DS (3, 2) → p                                  [depth 1]
+  //     5. → Introduction                                 [depth 0]
   // -----------------------------------------------------------------------
   test('23. Double Negation with LEM — derive P from ~~~~P via DN + LEM + DS', async ({
     page,
@@ -199,18 +193,14 @@ test.describe('Level 6 — LEM + Complex Logic', () => {
     await selectSteps(page, '1')
     await applyRule(page, 'Double Negation')
 
-    // Step 3: LEM (p) → p | ~p
+    // Step 1.2: LEM (p) → p | ~p
     await applyRuleWithInput(page, 'Law of Excluded Middle', 'p')
 
-    // Step 4: ∨ Elimination (Proof by Cases) on step 3 → p | ~p (setup)
-    await selectSteps(page, '3')
-    await applyRule(page, '∨ Elimination (Proof by Cases)')
-
-    // Step 5: Disjunctive Syllogism on steps 4 (p | ~p) and 2 (~~p) → p
-    await selectSteps(page, '4', '2')
+    // Step 1.3: Disjunctive Syllogism on steps 1.2 (p | ~p) and 1.1 (~~p) → p
+    await selectSteps(page, '1.2', '1.1')
     await applyRule(page, 'Disjunctive Syllogism')
 
-    // Step 6: → Introduction — closes subproof
+    // Step 5: → Introduction — closes subproof
     await applyRule(page, '→ Introduction')
 
     await expectProofComplete(page)
@@ -260,11 +250,10 @@ test.describe('Level 6 — LEM + Complex Logic', () => {
   //     2. ∧ Elim Left  → p -> q                          [depth 1]
   //     3. ∧ Elim Right → ~~p                              [depth 1]
   //     4. LEM (p) → p | ~p                                [depth 1]
-  //     5. ∨ Elimination on (4) → p | ~p  (setup)          [depth 1]
-  //     6. DS (5, 3) → p                                   [depth 1]
-  //     7. MP (6, 2) → q                                   [depth 1]
-  //     8. ∨ Intro Right on (7), input ~p → ~p | q         [depth 1]
-  //     9. → Introduction                                  [depth 0]
+  //     5. DS (4, 3) → p                                   [depth 1]
+  //     6. MP (5, 2) → q                                   [depth 1]
+  //     7. ∨ Intro Right on (6), input ~p → ~p | q         [depth 1]
+  //     8. → Introduction                                  [depth 0]
   // -----------------------------------------------------------------------
   test('25. Material Implication — prove (P→Q) → (~P|Q) via LEM + DS + MP + ∨I', async ({
     page,
@@ -286,26 +275,22 @@ test.describe('Level 6 — LEM + Complex Logic', () => {
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 4: LEM (p) → p | ~p
+    // Step 1.3: LEM (p) → p | ~p
     await applyRuleWithInput(page, 'Law of Excluded Middle', 'p')
 
-    // Step 5: ∨ Elimination (Proof by Cases) on step 4 → p | ~p (setup)
-    await selectSteps(page, '4')
-    await applyRule(page, '∨ Elimination (Proof by Cases)')
-
-    // Step 6: Disjunctive Syllogism on steps 5 (p | ~p) and 3 (~~p) → p
-    await selectSteps(page, '5', '3')
+    // Step 1.4: Disjunctive Syllogism on steps 1.3 (p | ~p) and 1.2 (~~p) → p
+    await selectSteps(page, '1.3', '1.2')
     await applyRule(page, 'Disjunctive Syllogism')
 
-    // Step 7: Modus Ponens on steps 6 (p) and 2 (p -> q) → q
-    await selectSteps(page, '6', '2')
+    // Step 1.5: Modus Ponens on steps 1.4 (p) and 1.1 (p -> q) → q
+    await selectSteps(page, '1.4', '1.1')
     await applyRule(page, 'Modus Ponens')
 
-    // Step 8: ∨ Introduction (Right) on step 7 (q), input ~p → ~p | q
-    await selectSteps(page, '7')
+    // Step 1.6: ∨ Introduction (Right) on step 1.5 (q), input ~p → ~p | q
+    await selectSteps(page, '1.5')
     await applyRuleWithInput(page, '∨ Introduction (Right)', '~p')
 
-    // Step 9: → Introduction — closes subproof
+    // Step 8: → Introduction — closes subproof
     await applyRule(page, '→ Introduction')
 
     await expectProofComplete(page)

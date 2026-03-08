@@ -9,8 +9,8 @@
  * encoded so that all required formulas (including the negated disjunct
  * needed for Disjunctive Syllogism) live at a single subproof depth.
  *
- * Each proof exercises ∨ Elimination as a setup/marker step, then uses
- * Disjunctive Syllogism plus other rules to complete the derivation.
+ * Each proof exercises Disjunctive Syllogism directly on the disjunction,
+ * then uses Modus Ponens and other rules to complete the derivation.
  */
 
 import { test, expect, Page } from '@playwright/test'
@@ -41,7 +41,7 @@ async function selectSteps(page: Page, ...lineNumbers: string[]) {
     const escaped = ln.replace(/\./g, '\\.')
     const stepRow = page
       .locator('.MuiPaper-root')
-      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.\\s`) })
+      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.`) })
       .first()
     await stepRow.click()
   }
@@ -98,8 +98,8 @@ test.describe('Level 4 — Disjunction Elimination (Proof by Cases)', () => {
   //   Original: P|Q, P→R, Q→R ⊢ R
   //   Encoded:  (p | q) ^ ~p ^ (q -> r) -> r
   //
-  //   Since ∨ Elimination in the UI echoes the disjunction as a marker,
-  //   we include ~p so Disjunctive Syllogism can resolve the case.
+  //   Since ∨ Elimination in the UI requires 3 steps (P∨Q + P→C + Q→C),
+  //   we include ~p so Disjunctive Syllogism can resolve the case directly.
   //
   //   Proof:
   //     1. Assume (p | q) ^ ~p ^ (q -> r)              [depth 1]
@@ -107,10 +107,9 @@ test.describe('Level 4 — Disjunction Elimination (Proof by Cases)', () => {
   //     3. ∧ Elim Right → q -> r                        [depth 1]
   //     4. ∧ Elim Left on (2) → p | q                   [depth 1]
   //     5. ∧ Elim Right on (2) → ~p                     [depth 1]
-  //     6. ∨ Elimination on (4) → p | q  (setup)        [depth 1]
-  //     7. DS (6, 5) → q                                [depth 1]
-  //     8. MP (7, 3) → r                                [depth 1]
-  //     9. → Introduction                                [depth 0]
+  //     6. DS (4, 5) → q                                [depth 1]
+  //     7. MP (6, 3) → r                                [depth 1]
+  //     8. → Introduction                                [depth 0]
   // -----------------------------------------------------------------------
   test('16. Classic Proof by Cases — derive R via ∨ Elim + DS + MP', async ({
     page,
@@ -132,27 +131,23 @@ test.describe('Level 4 — Disjunction Elimination (Proof by Cases)', () => {
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 4: ∧ Elimination (Left) on step 2 → p | q
-    await selectSteps(page, '2')
+    // Step 1.3: ∧ Elimination (Left) on step 1.1 → p | q
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 5: ∧ Elimination (Right) on step 2 → ~p
-    await selectSteps(page, '2')
+    // Step 1.4: ∧ Elimination (Right) on step 1.1 → ~p
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 6: ∨ Elimination (Proof by Cases) on step 4 → p | q (setup)
-    await selectSteps(page, '4')
-    await applyRule(page, '∨ Elimination (Proof by Cases)')
-
-    // Step 7: Disjunctive Syllogism on steps 6 (p | q) and 5 (~p) → q
-    await selectSteps(page, '6', '5')
+    // Step 1.5: Disjunctive Syllogism on steps 1.3 (p | q) and 1.4 (~p) → q
+    await selectSteps(page, '1.3', '1.4')
     await applyRule(page, 'Disjunctive Syllogism')
 
-    // Step 8: Modus Ponens on steps 7 (q) and 3 (q -> r) → r
-    await selectSteps(page, '7', '3')
+    // Step 1.6: Modus Ponens on steps 1.5 (q) and 1.2 (q -> r) → r
+    await selectSteps(page, '1.5', '1.2')
     await applyRule(page, 'Modus Ponens')
 
-    // Step 9: → Introduction — closes subproof
+    // Step 8: → Introduction — closes subproof
     await applyRule(page, '→ Introduction')
 
     await expectProofComplete(page)
@@ -173,10 +168,9 @@ test.describe('Level 4 — Disjunction Elimination (Proof by Cases)', () => {
   //     2. ∧ Elim Left  → p | q                         [depth 1]
   //     3. ∧ Elim Right → ~~~q                          [depth 1]
   //     4. Double Negation on (3) → ~q                   [depth 1]
-  //     5. ∨ Elimination on (2) → p | q  (setup)        [depth 1]
-  //     6. DS (5, 4) → p                                [depth 1]
-  //     7. ∨ Intro Right on (6), input q → q | p        [depth 1]
-  //     8. → Introduction                                [depth 0]
+  //     5. DS (2, 4) → p                                [depth 1]
+  //     6. ∨ Intro Right on (5), input q → q | p        [depth 1]
+  //     7. → Introduction                                [depth 0]
   // -----------------------------------------------------------------------
   test('17. Disjunction Commutativity — prove (P|Q) → (Q|P) via ∨ Elim + DS + ∨ Intro', async ({
     page,
@@ -198,23 +192,19 @@ test.describe('Level 4 — Disjunction Elimination (Proof by Cases)', () => {
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 4: Double Negation on step 3 → ~q
-    await selectSteps(page, '3')
+    // Step 1.3: Double Negation on step 1.2 → ~q
+    await selectSteps(page, '1.2')
     await applyRule(page, 'Double Negation')
 
-    // Step 5: ∨ Elimination (Proof by Cases) on step 2 → p | q (setup)
-    await selectSteps(page, '2')
-    await applyRule(page, '∨ Elimination (Proof by Cases)')
-
-    // Step 6: Disjunctive Syllogism on steps 5 (p | q) and 4 (~q) → p
-    await selectSteps(page, '5', '4')
+    // Step 1.4: Disjunctive Syllogism on steps 1.1 (p | q) and 1.3 (~q) → p
+    await selectSteps(page, '1.1', '1.3')
     await applyRule(page, 'Disjunctive Syllogism')
 
-    // Step 7: ∨ Introduction (Right) on step 6 (p), input q → q | p
-    await selectSteps(page, '6')
+    // Step 1.5: ∨ Introduction (Right) on step 1.4 (p), input q → q | p
+    await selectSteps(page, '1.4')
     await applyRuleWithInput(page, '∨ Introduction (Right)', 'q')
 
-    // Step 8: → Introduction — closes subproof
+    // Step 7: → Introduction — closes subproof
     await applyRule(page, '→ Introduction')
 
     await expectProofComplete(page)
@@ -236,12 +226,11 @@ test.describe('Level 4 — Disjunction Elimination (Proof by Cases)', () => {
   //     3. ∧ Elim Right → ~p                             [depth 1]
   //     4. ∧ Elim Left on (2) → p | q                   [depth 1]
   //     5. ∧ Elim Right on (2) → r                      [depth 1]
-  //     6. ∨ Elimination on (4) → p | q  (setup)        [depth 1]
-  //     7. DS (6, 3) → q                                [depth 1]
-  //     8. ∧ Intro (7, 5) → q ^ r                       [depth 1]
-  //     9. ∨ Intro Right on (8), input p ^ r →           [depth 1]
+  //     6. DS (4, 3) → q                                [depth 1]
+  //     7. ∧ Intro (6, 5) → q ^ r                       [depth 1]
+  //     8. ∨ Intro Right on (7), input p ^ r →           [depth 1]
   //          (p ^ r) | (q ^ r)
-  //    10. → Introduction                                [depth 0]
+  //     9. → Introduction                                [depth 0]
   // -----------------------------------------------------------------------
   test('18. Distribution — prove (P|Q)^R → (P^R)|(Q^R) via ∨ Elim + DS + ∧I + ∨I', async ({
     page,
@@ -263,32 +252,28 @@ test.describe('Level 4 — Disjunction Elimination (Proof by Cases)', () => {
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 4: ∧ Elimination (Left) on step 2 → p | q
-    await selectSteps(page, '2')
+    // Step 1.3: ∧ Elimination (Left) on step 1.1 → p | q
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 5: ∧ Elimination (Right) on step 2 → r
-    await selectSteps(page, '2')
+    // Step 1.4: ∧ Elimination (Right) on step 1.1 → r
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 6: ∨ Elimination (Proof by Cases) on step 4 → p | q (setup)
-    await selectSteps(page, '4')
-    await applyRule(page, '∨ Elimination (Proof by Cases)')
-
-    // Step 7: Disjunctive Syllogism on steps 6 (p | q) and 3 (~p) → q
-    await selectSteps(page, '6', '3')
+    // Step 1.5: Disjunctive Syllogism on steps 1.3 (p | q) and 1.2 (~p) → q
+    await selectSteps(page, '1.3', '1.2')
     await applyRule(page, 'Disjunctive Syllogism')
 
-    // Step 8: ∧ Introduction on steps 7 (q) and 5 (r) → q ^ r
-    await selectSteps(page, '7', '5')
+    // Step 1.6: ∧ Introduction on steps 1.5 (q) and 1.4 (r) → q ^ r
+    await selectSteps(page, '1.5', '1.4')
     await applyRule(page, '∧ Introduction')
 
-    // Step 9: ∨ Introduction (Right) on step 8 (q ^ r), input p ^ r
+    // Step 1.7: ∨ Introduction (Right) on step 1.6 (q ^ r), input p ^ r
     //         → (p ^ r) | (q ^ r)
-    await selectSteps(page, '8')
+    await selectSteps(page, '1.6')
     await applyRuleWithInput(page, '∨ Introduction (Right)', 'p ^ r')
 
-    // Step 10: → Introduction — closes subproof
+    // Step 9: → Introduction — closes subproof
     await applyRule(page, '→ Introduction')
 
     await expectProofComplete(page)

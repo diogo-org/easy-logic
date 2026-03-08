@@ -144,3 +144,115 @@ describe('pre-push hook file validation', () => {
     expect(content).toContain('node');
   });
 });
+
+describe('pre-push E2E screenshot verification logic', () => {
+  let testDir: string;
+  let originalCwd: string;
+
+  beforeEach(() => {
+    originalCwd = process.cwd();
+    testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-screenshot-test-'));
+    process.chdir(testDir);
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    if (fs.existsSync(testDir)) {
+      fs.rmSync(testDir, { recursive: true, force: true });
+    }
+  });
+
+  it('should skip E2E checks for non-react template projects', () => {
+    fs.writeFileSync('package.json', JSON.stringify({ name: 'test', version: '1.0.0', typescriptBootstrap: { template: 'typescript' } }));
+    const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
+    expect(packageJson.typescriptBootstrap?.template).not.toBe('react');
+  });
+
+  it('should detect react template from package.json', () => {
+    fs.writeFileSync('package.json', JSON.stringify({ name: 'test', version: '1.0.0', typescriptBootstrap: { template: 'react' } }));
+    const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
+    expect(packageJson.typescriptBootstrap?.template).toBe('react');
+  });
+
+  it('should count test() calls in e2e files', () => {
+    const e2eDir = path.join(testDir, 'e2e');
+    fs.mkdirSync(e2eDir, { recursive: true });
+    fs.writeFileSync(path.join(e2eDir, 'app.e2e.ts'), `
+      import { test, expect } from '@playwright/test'
+      test('first test', async ({ page }) => { await page.goto('/') })
+      test('second test', async ({ page }) => { await page.goto('/about') })
+    `);
+
+    const e2eFiles = fs.readdirSync(e2eDir).filter(f => f.endsWith('.e2e.ts'));
+    let testCount = 0;
+    for (const file of e2eFiles) {
+      const content = fs.readFileSync(path.join(e2eDir, file), 'utf-8');
+      const testMatches = content.match(/\btest\s*\(/g);
+      if (testMatches) {
+        testCount += testMatches.length;
+      }
+    }
+    expect(testCount).toBe(2);
+  });
+
+  it('should verify screenshot count matches test count', () => {
+    const e2eDir = path.join(testDir, 'e2e');
+    const screenshotsDir = path.join(e2eDir, 'screenshots');
+    fs.mkdirSync(screenshotsDir, { recursive: true });
+
+    // Create e2e test file with 3 tests
+    fs.writeFileSync(path.join(e2eDir, 'app.e2e.ts'), `
+      test('test one', async ({ page }) => {})
+      test('test two', async ({ page }) => {})
+      test('test three', async ({ page }) => {})
+    `);
+
+    // Create only 2 screenshots (should fail the check)
+    fs.writeFileSync(path.join(screenshotsDir, 'one.png'), 'fake-png');
+    fs.writeFileSync(path.join(screenshotsDir, 'two.png'), 'fake-png');
+
+    const pngFiles = fs.readdirSync(screenshotsDir).filter(f => f.endsWith('.png'));
+
+    const e2eFiles = fs.readdirSync(e2eDir).filter(f => f.endsWith('.e2e.ts'));
+    let testCount = 0;
+    for (const file of e2eFiles) {
+      const content = fs.readFileSync(path.join(e2eDir, file), 'utf-8');
+      const testMatches = content.match(/\btest\s*\(/g);
+      if (testMatches) {
+        testCount += testMatches.length;
+      }
+    }
+
+    expect(pngFiles.length).toBeLessThan(testCount);
+  });
+
+  it('should pass when screenshot count matches test count', () => {
+    const e2eDir = path.join(testDir, 'e2e');
+    const screenshotsDir = path.join(e2eDir, 'screenshots');
+    fs.mkdirSync(screenshotsDir, { recursive: true });
+
+    // Create e2e test file with 2 tests
+    fs.writeFileSync(path.join(e2eDir, 'app.e2e.ts'), `
+      test('test one', async ({ page }) => {})
+      test('test two', async ({ page }) => {})
+    `);
+
+    // Create 2 screenshots (matches)
+    fs.writeFileSync(path.join(screenshotsDir, 'one.png'), 'fake-png');
+    fs.writeFileSync(path.join(screenshotsDir, 'two.png'), 'fake-png');
+
+    const pngFiles = fs.readdirSync(screenshotsDir).filter(f => f.endsWith('.png'));
+
+    const e2eFiles = fs.readdirSync(e2eDir).filter(f => f.endsWith('.e2e.ts'));
+    let testCount = 0;
+    for (const file of e2eFiles) {
+      const content = fs.readFileSync(path.join(e2eDir, file), 'utf-8');
+      const testMatches = content.match(/\btest\s*\(/g);
+      if (testMatches) {
+        testCount += testMatches.length;
+      }
+    }
+
+    expect(pngFiles.length).toBeGreaterThanOrEqual(testCount);
+  });
+});

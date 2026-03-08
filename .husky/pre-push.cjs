@@ -39,8 +39,7 @@ function runTestsWithCoverage(stepLabel) {
   try {
     const testOutput = execSync('npx vitest run --coverage', {
       stdio: 'pipe',
-      encoding: 'utf-8',
-      shell: true,
+      encoding: 'utf-8'
     });
 
     const { coverage, skippedTests } = parseVitestRunOutput(testOutput);
@@ -92,7 +91,6 @@ try {
     stdio: 'pipe',
     encoding: 'utf-8',
     timeout: 60000,
-    shell: true,
   });
   printStatus(true, 'Bootstrap update applied (or already up to date)');
 } catch {
@@ -345,8 +343,7 @@ try {
   // Run jscpd - it will exit with error code if threshold is exceeded
   execSync('npx jscpd src --reporters json --silent', {
     stdio: 'pipe',
-    encoding: 'utf-8',
-    shell: true,
+    encoding: 'utf-8'
   });
 
   // Read the report file
@@ -479,8 +476,7 @@ console.log('Step 10: TypeScript type checking...');
 try {
   execSync('npx tsc --noEmit', {
     stdio: 'pipe',
-    encoding: 'utf-8',
-    shell: true,
+    encoding: 'utf-8'
   });
   printStatus(true, 'TypeScript type check passed');
 } catch (error) {
@@ -489,7 +485,7 @@ try {
   log(colors.red, '\n❌ Push aborted: Fix all TypeScript errors before pushing');
   console.log('');
   log(colors.cyan, '🤖 AI ASSISTANT — HOW TO FIX THIS:');
-  log(colors.cyan, '   Read each error above \u2014 it includes the file path, line number, and description.');
+  log(colors.cyan, '   Read each error above — it includes the file path, line number, and description.');
   log(colors.cyan, '   Fix the type errors in the source files. Do NOT add `any` casts or @ts-ignore to hide them.');
   log(colors.cyan, '   Run `npx tsc --noEmit` locally to verify all errors are resolved before pushing.');
   log(colors.cyan, '   ⛔ NEVER bypass with --no-verify, HUSKY=0, or git push --no-verify.');
@@ -526,8 +522,7 @@ console.log('Step 12: Checking for dead code...');
 try {
   execSync('npx knip', {
     stdio: 'pipe',
-    encoding: 'utf-8',
-    shell: true,
+    encoding: 'utf-8'
   });
   printStatus(true, 'No dead code detected');
 } catch (error) {
@@ -574,7 +569,6 @@ console.log('Step 13: Running SonarJS analysis...');
     output = execSync('npx eslint src scripts .husky --format stylish', { // NOSONAR
       stdio: 'pipe',
       encoding: 'utf-8',
-      shell: true,
     });
   } catch (error) {
     output = (error.stdout || '') + (error.stderr || '');
@@ -598,7 +592,7 @@ console.log('Step 13: Running SonarJS analysis...');
     log(colors.red, '\n❌ Push aborted: Fix all SonarJS errors before pushing');
     console.log('');
     log(colors.cyan, '🤖 AI ASSISTANT — HOW TO FIX THIS:');
-    log(colors.cyan, '   Read each sonarjs/ error above \u2014 it names the rule and the file/line.');
+    log(colors.cyan, '   Read each sonarjs/ error above — it names the rule and the file/line.');
     log(colors.cyan, '   Fix the code to satisfy the rule (reduce complexity, fix security flaw, etc.).');
     log(colors.cyan, '   Use `// NOSONAR` on a specific line only when the violation is deliberate and documented.');
     log(colors.cyan, '   ⛔ NEVER bypass with --no-verify, HUSKY=0, or git push --no-verify.');
@@ -607,6 +601,117 @@ console.log('Step 13: Running SonarJS analysis...');
 
   const warnSuffix = sonarWarnings.length > 0 ? ` (${sonarWarnings.length} warning(s))` : '';
   printStatus(true, `SonarJS analysis passed${warnSuffix}`);
+  console.log('');
+})();
+
+// Step 14: E2E Playwright tests with screenshot verification (React template only)
+console.log('Step 14: Running E2E Playwright tests...');
+(function runE2ETests() {
+  // Detect if this is a React template project by checking package.json
+  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
+  const template = packageJson.typescriptBootstrap?.template;
+
+  if (template !== 'react') {
+    printStatus(true, 'E2E tests skipped (not a React template project)');
+    console.log('');
+    return;
+  }
+
+  // Check that playwright.config.ts exists
+  if (!fs.existsSync('playwright.config.ts')) {
+    printStatus(false, 'playwright.config.ts not found');
+    log(colors.red, '\n❌ Push aborted: React template requires playwright.config.ts');
+    console.log('');
+    log(colors.cyan, '🤖 AI ASSISTANT — HOW TO FIX THIS:');
+    log(colors.cyan, '   Ensure playwright.config.ts exists in the project root.');
+    log(colors.cyan, '   ⛔ NEVER bypass with --no-verify, HUSKY=0, or git push --no-verify.');
+    process.exit(1);
+  }
+
+  // Check that e2e/screenshots directory exists
+  const screenshotsDir = path.join(process.cwd(), 'e2e', 'screenshots');
+  if (!fs.existsSync(screenshotsDir)) {
+    fs.mkdirSync(screenshotsDir, { recursive: true });
+  }
+
+  // Count E2E test cases by parsing test files for test() calls
+  const e2eDir = path.join(process.cwd(), 'e2e');
+  if (!fs.existsSync(e2eDir)) {
+    printStatus(false, 'e2e/ directory not found');
+    log(colors.red, '\n❌ Push aborted: React template requires e2e/ directory with E2E tests');
+    console.log('');
+    log(colors.cyan, '🤖 AI ASSISTANT — HOW TO FIX THIS:');
+    log(colors.cyan, '   Create the e2e/ directory with .e2e.ts test files.');
+    log(colors.cyan, '   ⛔ NEVER bypass with --no-verify, HUSKY=0, or git push --no-verify.');
+    process.exit(1);
+  }
+
+  const e2eFiles = fs.readdirSync(e2eDir).filter(f => f.endsWith('.e2e.ts'));
+  if (e2eFiles.length === 0) {
+    printStatus(false, 'No E2E test files found');
+    log(colors.red, '\n❌ Push aborted: React template requires at least one .e2e.ts file in e2e/');
+    console.log('');
+    log(colors.cyan, '🤖 AI ASSISTANT — HOW TO FIX THIS:');
+    log(colors.cyan, '   Create at least one .e2e.ts file in the e2e/ directory.');
+    log(colors.cyan, '   ⛔ NEVER bypass with --no-verify, HUSKY=0, or git push --no-verify.');
+    process.exit(1);
+  }
+
+  // Count test() calls across all E2E files
+  let testCount = 0;
+  for (const file of e2eFiles) {
+    const content = fs.readFileSync(path.join(e2eDir, file), 'utf-8');
+    const testMatches = content.match(/\btest\s*\(/g);
+    if (testMatches) {
+      testCount += testMatches.length;
+    }
+  }
+
+  // Run Playwright tests
+  try {
+    execSync('npx playwright install --with-deps chromium', {
+      stdio: 'pipe',
+      encoding: 'utf-8',
+      shell: true,
+    });
+  } catch {
+    log(colors.yellow, '⚠️  Playwright browser installation may have failed — attempting tests anyway');
+  }
+
+  try {
+    execSync('npx playwright test', {
+      stdio: 'pipe',
+      encoding: 'utf-8',
+      shell: true,
+    });
+    printStatus(true, 'E2E Playwright tests passed');
+  } catch (error) {
+    printStatus(false, 'E2E Playwright tests failed');
+    console.log(error.stdout?.toString().slice(-2000) || '');
+    log(colors.red, '\n❌ Push aborted: E2E tests must pass before pushing');
+    console.log('');
+    log(colors.cyan, '🤖 AI ASSISTANT — HOW TO FIX THIS:');
+    log(colors.cyan, '   Run `npx playwright test` locally to diagnose failures.');
+    log(colors.cyan, '   Fix the failing tests or the application code.');
+    log(colors.cyan, '   ⛔ NEVER bypass with --no-verify, HUSKY=0, or git push --no-verify.');
+    process.exit(1);
+  }
+
+  // Verify screenshots: one PNG per test
+  const pngFiles = fs.readdirSync(screenshotsDir).filter(f => f.endsWith('.png'));
+
+  if (pngFiles.length < testCount) {
+    printStatus(false, `Expected ${testCount} screenshot(s) but found ${pngFiles.length}`);
+    log(colors.red, '\n❌ Push aborted: Each E2E test must produce a screenshot in e2e/screenshots/');
+    console.log('');
+    log(colors.cyan, '🤖 AI ASSISTANT — HOW TO FIX THIS:');
+    log(colors.cyan, '   Ensure every test() in your .e2e.ts files calls page.screenshot()');
+    log(colors.cyan, '   saving to e2e/screenshots/<name>.png.');
+    log(colors.cyan, '   ⛔ NEVER bypass with --no-verify, HUSKY=0, or git push --no-verify.');
+    process.exit(1);
+  }
+
+  printStatus(true, `${pngFiles.length} screenshot(s) verified for ${testCount} test(s)`);
   console.log('');
 })();
 

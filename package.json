@@ -1,7 +1,7 @@
 {
   "name": "easy-logic",
   "private": true,
-  "version": "0.4.17",
+  "version": "0.4.18",
   "type": "module",
   "homepage": "https://diogo.github.io/easy-logic",
   "scripts": {
@@ -18,7 +18,8 @@
     "version:minor": "npm version minor --no-git-tag-version",
     "version:major": "npm version major --no-git-tag-version",
     "hash:update": "node scripts/template-integrity.cjs update",
-    "test:e2e": "npx playwright test"
+    "test:e2e": "npx playwright test",
+    "test:e2e:screenshots": "npx playwright test --update-snapshots"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -34,9 +35,9 @@
     "react-router-dom": "^7.13.0"
   },
   "devDependencies": {
-    "@diogo-org/typescript-bootstrap": "^1.6.3",
+    "@diogo-org/typescript-bootstrap": "^1.8.2",
     "@eslint/js": "^9.39.2",
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "^1.52.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
@@ -50,6 +51,7 @@
     "eslint-plugin-sonarjs": "^4.0.1",
     "happy-dom": "^20.3.4",
     "husky": "^9.1.7",
+    "jscodeshift": "^17.3.0",
     "jscpd": "^4.0.8",
     "jsdom": "^27.4.0",
     "typescript": "^5.4.5",

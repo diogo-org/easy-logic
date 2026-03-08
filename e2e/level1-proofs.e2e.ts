@@ -50,7 +50,7 @@ async function selectSteps(page: Page, ...lineNumbers: string[]) {
     const escaped = ln.replace(/\./g, '\\.')
     const stepRow = page
       .locator('.MuiPaper-root')
-      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.\\s`) })
+      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.`) })
       .first()
     await stepRow.click()
   }

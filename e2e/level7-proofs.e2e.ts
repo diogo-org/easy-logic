@@ -44,7 +44,7 @@ async function selectSteps(page: Page, ...lineNumbers: string[]) {
     const escaped = ln.replace(/\./g, '\\.')
     const stepRow = page
       .locator('.MuiPaper-root')
-      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.\\s`) })
+      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.`) })
       .first()
     await stepRow.click()
   }
@@ -118,12 +118,11 @@ test.describe('Level 7 — Very Complex Proofs', () => {
   //     6.  ∧ Elim Left on (4) → p -> q                                  [d1]
   //     7.  ∧ Elim Right on (4) → q -> r                                 [d1]
   //     8.  LEM (p) → p | ~p                                             [d1]
-  //     9.  ∨ Elimination on (8) → p | ~p  (setup)                       [d1]
-  //     10. DS (9, 3) → p  (~~p negates ~p in the disjunction)           [d1]
-  //     11. MP (10, 6) → q  (p with p -> q)                              [d1]
-  //     12. MP (11, 7) → r  (q with q -> r)                              [d1]
-  //     13. MP (12, 5) → s  (r with r -> s)                              [d1]
-  //     14. → Introduction                                               [d0]
+  //     9.  DS (8, 3) → p  (~~p negates ~p in the disjunction)            [d1]
+  //     10. MP (9, 6) → q  (p with p -> q)                               [d1]
+  //     11. MP (10, 7) → r  (q with q -> r)                              [d1]
+  //     12. MP (11, 5) → s  (r with r -> s)                              [d1]
+  //     13. → Introduction                                               [d0]
   // -----------------------------------------------------------------------
   test('26. Peirce\'s Law — derive S via LEM + DS + chained MP through classical reasoning', async ({
     page,
@@ -144,54 +143,50 @@ test.describe('Level 7 — Very Complex Proofs', () => {
       '(p -> q) ^ (q -> r) ^ (r -> s) ^ ~~p',
     )
 
-    // Step 2: ∧ Elimination (Left) on step 1
+    // Step 1.1: ∧ Elimination (Left) on step 1
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 3: ∧ Elimination (Right) on step 1 → ~~p
+    // Step 1.2: ∧ Elimination (Right) on step 1 → ~~p
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 4: ∧ Elimination (Left) on step 2
-    await selectSteps(page, '2')
+    // Step 1.3: ∧ Elimination (Left) on step 1.1
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 5: ∧ Elimination (Right) on step 2 → r -> s
-    await selectSteps(page, '2')
+    // Step 1.4: ∧ Elimination (Right) on step 1.1 → r -> s
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 6: ∧ Elimination (Left) on step 4 → p -> q
-    await selectSteps(page, '4')
+    // Step 1.5: ∧ Elimination (Left) on step 1.3 → p -> q
+    await selectSteps(page, '1.3')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 7: ∧ Elimination (Right) on step 4 → q -> r
-    await selectSteps(page, '4')
+    // Step 1.6: ∧ Elimination (Right) on step 1.3 → q -> r
+    await selectSteps(page, '1.3')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 8: LEM (p) → p | ~p
+    // Step 1.7: LEM (p) → p | ~p
     await applyRuleWithInput(page, 'Law of Excluded Middle', 'p')
 
-    // Step 9: ∨ Elimination (Proof by Cases) on step 8 → p | ~p (setup)
-    await selectSteps(page, '8')
-    await applyRule(page, '∨ Elimination (Proof by Cases)')
-
-    // Step 10: Disjunctive Syllogism on steps 9 (p | ~p) and 3 (~~p) → p
-    await selectSteps(page, '9', '3')
+    // Step 1.8: Disjunctive Syllogism on steps 1.7 (p | ~p) and 1.2 (~~p) → p
+    await selectSteps(page, '1.7', '1.2')
     await applyRule(page, 'Disjunctive Syllogism')
 
-    // Step 11: Modus Ponens on steps 10 (p) and 6 (p -> q) → q
-    await selectSteps(page, '10', '6')
+    // Step 1.9: Modus Ponens on steps 1.8 (p) and 1.5 (p -> q) → q
+    await selectSteps(page, '1.8', '1.5')
     await applyRule(page, 'Modus Ponens')
 
-    // Step 12: Modus Ponens on steps 11 (q) and 7 (q -> r) → r
-    await selectSteps(page, '11', '7')
+    // Step 1.10: Modus Ponens on steps 1.9 (q) and 1.6 (q -> r) → r
+    await selectSteps(page, '1.9', '1.6')
     await applyRule(page, 'Modus Ponens')
 
-    // Step 13: Modus Ponens on steps 12 (r) and 5 (r -> s) → s
-    await selectSteps(page, '12', '5')
+    // Step 1.11: Modus Ponens on steps 1.10 (r) and 1.4 (r -> s) → s
+    await selectSteps(page, '1.10', '1.4')
     await applyRule(page, 'Modus Ponens')
 
-    // Step 14: → Introduction — closes subproof
+    // Step 13: → Introduction — closes subproof
     await applyRule(page, '→ Introduction')
 
     await expectProofComplete(page)
@@ -220,10 +215,9 @@ test.describe('Level 7 — Very Complex Proofs', () => {
   //     6.  Double Negation on (4) → ~~(p | ~p)                          [d1]
   //     7.  Double Negation on (6) → p | ~p                              [d1]
   //     8.  Double Negation on (5) → p -> q                              [d1]
-  //     9.  ∨ Elimination on (7) → p | ~p  (setup)                       [d1]
-  //     10. DS (9, 3) → p  (~~p negates ~p in the disjunction)           [d1]
-  //     11. MP (10, 8) → q  (p with p -> q)                              [d1]
-  //     12. → Introduction                                               [d0]
+  //     8.  DS (7, 3) → p  (~~p negates ~p in the disjunction)            [d1]
+  //     9.  MP (8, 7) → q  (p with p -> q)                               [d1]
+  //     10. → Introduction                                               [d0]
   // -----------------------------------------------------------------------
   test('27. Double Negation of LEM — derive Q via triple DN + DS + MP', async ({
     page,
@@ -244,47 +238,43 @@ test.describe('Level 7 — Very Complex Proofs', () => {
       '~~~~(p | ~p) ^ ~~(p -> q) ^ ~~p',
     )
 
-    // Step 2: ∧ Elimination (Left) on step 1
+    // Step 1.1: ∧ Elimination (Left) on step 1
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 3: ∧ Elimination (Right) on step 1 → ~~p
+    // Step 1.2: ∧ Elimination (Right) on step 1 → ~~p
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 4: ∧ Elimination (Left) on step 2 → ~~~~(p | ~p)
-    await selectSteps(page, '2')
+    // Step 1.3: ∧ Elimination (Left) on step 1.1 → ~~~~(p | ~p)
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 5: ∧ Elimination (Right) on step 2 → ~~(p -> q)
-    await selectSteps(page, '2')
+    // Step 1.4: ∧ Elimination (Right) on step 1.1 → ~~(p -> q)
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 6: Double Negation on step 4 → ~~(p | ~p)
-    await selectSteps(page, '4')
+    // Step 1.5: Double Negation on step 1.3 → ~~(p | ~p)
+    await selectSteps(page, '1.3')
     await applyRule(page, 'Double Negation')
 
-    // Step 7: Double Negation on step 6 → p | ~p
-    await selectSteps(page, '6')
+    // Step 1.6: Double Negation on step 1.5 → p | ~p
+    await selectSteps(page, '1.5')
     await applyRule(page, 'Double Negation')
 
-    // Step 8: Double Negation on step 5 → p -> q
-    await selectSteps(page, '5')
+    // Step 1.7: Double Negation on step 1.4 → p -> q
+    await selectSteps(page, '1.4')
     await applyRule(page, 'Double Negation')
 
-    // Step 9: ∨ Elimination (Proof by Cases) on step 7 → p | ~p (setup)
-    await selectSteps(page, '7')
-    await applyRule(page, '∨ Elimination (Proof by Cases)')
-
-    // Step 10: Disjunctive Syllogism on steps 9 (p | ~p) and 3 (~~p) → p
-    await selectSteps(page, '9', '3')
+    // Step 1.8: Disjunctive Syllogism on steps 1.6 (p | ~p) and 1.2 (~~p) → p
+    await selectSteps(page, '1.6', '1.2')
     await applyRule(page, 'Disjunctive Syllogism')
 
-    // Step 11: Modus Ponens on steps 10 (p) and 8 (p -> q) → q
-    await selectSteps(page, '10', '8')
+    // Step 1.9: Modus Ponens on steps 1.8 (p) and 1.7 (p -> q) → q
+    await selectSteps(page, '1.8', '1.7')
     await applyRule(page, 'Modus Ponens')
 
-    // Step 12: → Introduction — closes subproof
+    // Step 10: → Introduction — closes subproof
     await applyRule(page, '→ Introduction')
 
     await expectProofComplete(page)
@@ -311,12 +301,11 @@ test.describe('Level 7 — Very Complex Proofs', () => {
   //     5.  ∧ Elim Right on (2) → p | q                                  [d1]
   //     6.  ∧ Elim Left on (4) → p -> r                                  [d1]
   //     7.  ∧ Elim Right on (4) → q -> r                                 [d1]
-  //     8.  ∨ Elimination on (5) → p | q  (setup)                        [d1]
-  //     9.  DS (8, 3) → p  (~q negates q, the right disjunct)            [d1]
-  //     10. MP (9, 6) → r  (p with p -> r)                               [d1]
-  //     11. → Introduction                                               [d0]
+  //     8.  DS (5, 3) → p  (~q negates q, the right disjunct)             [d1]
+  //     9.  MP (8, 6) → r  (p with p -> r)                               [d1]
+  //     10. → Introduction                                               [d0]
   //
-  //   Note: Step 7 (q -> r) is unused. Both P→R and Q→R appear in the
+  //   Note: Step 1.6 (q -> r) is unused. Both P→R and Q→R appear in the
   //   encoding for conceptual fidelity to the "reverse proof by cases"
   //   structure, but the flat encoding only resolves one branch via DS.
   // -----------------------------------------------------------------------
@@ -339,43 +328,39 @@ test.describe('Level 7 — Very Complex Proofs', () => {
       '(p -> r) ^ (q -> r) ^ (p | q) ^ ~q',
     )
 
-    // Step 2: ∧ Elimination (Left) on step 1
+    // Step 1.1: ∧ Elimination (Left) on step 1
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 3: ∧ Elimination (Right) on step 1 → ~q
+    // Step 1.2: ∧ Elimination (Right) on step 1 → ~q
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 4: ∧ Elimination (Left) on step 2
-    await selectSteps(page, '2')
+    // Step 1.3: ∧ Elimination (Left) on step 1.1
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 5: ∧ Elimination (Right) on step 2 → p | q
-    await selectSteps(page, '2')
+    // Step 1.4: ∧ Elimination (Right) on step 1.1 → p | q
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 6: ∧ Elimination (Left) on step 4 → p -> r
-    await selectSteps(page, '4')
+    // Step 1.5: ∧ Elimination (Left) on step 1.3 → p -> r
+    await selectSteps(page, '1.3')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 7: ∧ Elimination (Right) on step 4 → q -> r
-    await selectSteps(page, '4')
+    // Step 1.6: ∧ Elimination (Right) on step 1.3 → q -> r
+    await selectSteps(page, '1.3')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 8: ∨ Elimination (Proof by Cases) on step 5 → p | q (setup)
-    await selectSteps(page, '5')
-    await applyRule(page, '∨ Elimination (Proof by Cases)')
-
-    // Step 9: Disjunctive Syllogism on steps 8 (p | q) and 3 (~q) → p
-    await selectSteps(page, '8', '3')
+    // Step 1.7: Disjunctive Syllogism on steps 1.4 (p | q) and 1.2 (~q) → p
+    await selectSteps(page, '1.4', '1.2')
     await applyRule(page, 'Disjunctive Syllogism')
 
-    // Step 10: Modus Ponens on steps 9 (p) and 6 (p -> r) → r
-    await selectSteps(page, '9', '6')
+    // Step 1.8: Modus Ponens on steps 1.7 (p) and 1.5 (p -> r) → r
+    await selectSteps(page, '1.7', '1.5')
     await applyRule(page, 'Modus Ponens')
 
-    // Step 11: → Introduction — closes subproof
+    // Step 10: → Introduction — closes subproof
     await applyRule(page, '→ Introduction')
 
     await expectProofComplete(page)
@@ -405,10 +390,9 @@ test.describe('Level 7 — Very Complex Proofs', () => {
   //     7.  ∧ Elim Right on (4) → ~q                                     [d1]
   //     8.  DN on (5) → p                                                [d1]
   //     9.  MP (8, 6) → q | r  (p with p -> (q | r))                     [d1]
-  //     10. ∨ Elimination on (9) → q | r  (setup)                        [d1]
-  //     11. DS (10, 7) → r  (~q negates q, the left disjunct)            [d1]
-  //     12. MP (11, 3) → s  (r with r -> s)                              [d1]
-  //     13. → Introduction                                               [d0]
+  //     10. DS (9, 7) → r  (~q negates q, the left disjunct)              [d1]
+  //     11. MP (10, 3) → s  (r with r -> s)                               [d1]
+  //     12. → Introduction                                               [d0]
   // -----------------------------------------------------------------------
   test('29. Complex Nested Reasoning — derive S via DN + MP + DS + chained MP', async ({
     page,
@@ -429,51 +413,47 @@ test.describe('Level 7 — Very Complex Proofs', () => {
       '(p -> (q | r)) ^ ~q ^ ~~p ^ (r -> s)',
     )
 
-    // Step 2: ∧ Elimination (Left) on step 1
+    // Step 1.1: ∧ Elimination (Left) on step 1
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 3: ∧ Elimination (Right) on step 1 → r -> s
+    // Step 1.2: ∧ Elimination (Right) on step 1 → r -> s
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 4: ∧ Elimination (Left) on step 2
-    await selectSteps(page, '2')
+    // Step 1.3: ∧ Elimination (Left) on step 1.1
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 5: ∧ Elimination (Right) on step 2 → ~~p
-    await selectSteps(page, '2')
+    // Step 1.4: ∧ Elimination (Right) on step 1.1 → ~~p
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 6: ∧ Elimination (Left) on step 4 → p -> (q | r)
-    await selectSteps(page, '4')
+    // Step 1.5: ∧ Elimination (Left) on step 1.3 → p -> (q | r)
+    await selectSteps(page, '1.3')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 7: ∧ Elimination (Right) on step 4 → ~q
-    await selectSteps(page, '4')
+    // Step 1.6: ∧ Elimination (Right) on step 1.3 → ~q
+    await selectSteps(page, '1.3')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 8: Double Negation on step 5 → p
-    await selectSteps(page, '5')
+    // Step 1.7: Double Negation on step 1.4 → p
+    await selectSteps(page, '1.4')
     await applyRule(page, 'Double Negation')
 
-    // Step 9: Modus Ponens on steps 8 (p) and 6 (p -> (q | r)) → q | r
-    await selectSteps(page, '8', '6')
+    // Step 1.8: Modus Ponens on steps 1.7 (p) and 1.5 (p -> (q | r)) → q | r
+    await selectSteps(page, '1.7', '1.5')
     await applyRule(page, 'Modus Ponens')
 
-    // Step 10: ∨ Elimination (Proof by Cases) on step 9 → q | r (setup)
-    await selectSteps(page, '9')
-    await applyRule(page, '∨ Elimination (Proof by Cases)')
-
-    // Step 11: Disjunctive Syllogism on steps 10 (q | r) and 7 (~q) → r
-    await selectSteps(page, '10', '7')
+    // Step 1.9: Disjunctive Syllogism on steps 1.8 (q | r) and 1.6 (~q) → r
+    await selectSteps(page, '1.8', '1.6')
     await applyRule(page, 'Disjunctive Syllogism')
 
-    // Step 12: Modus Ponens on steps 11 (r) and 3 (r -> s) → s
-    await selectSteps(page, '11', '3')
+    // Step 1.10: Modus Ponens on steps 1.9 (r) and 1.2 (r -> s) → s
+    await selectSteps(page, '1.9', '1.2')
     await applyRule(page, 'Modus Ponens')
 
-    // Step 13: → Introduction — closes subproof
+    // Step 12: → Introduction — closes subproof
     await applyRule(page, '→ Introduction')
 
     await expectProofComplete(page)
@@ -526,40 +506,40 @@ test.describe('Level 7 — Very Complex Proofs', () => {
       '(p -> q) ^ (q -> r) ^ (r -> s) ^ p',
     )
 
-    // Step 2: ∧ Elimination (Left) on step 1
+    // Step 1.1: ∧ Elimination (Left) on step 1
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 3: ∧ Elimination (Right) on step 1 → p
+    // Step 1.2: ∧ Elimination (Right) on step 1 → p
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 4: ∧ Elimination (Left) on step 2
-    await selectSteps(page, '2')
+    // Step 1.3: ∧ Elimination (Left) on step 1.1
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 5: ∧ Elimination (Right) on step 2 → r -> s
-    await selectSteps(page, '2')
+    // Step 1.4: ∧ Elimination (Right) on step 1.1 → r -> s
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 6: ∧ Elimination (Left) on step 4 → p -> q
-    await selectSteps(page, '4')
+    // Step 1.5: ∧ Elimination (Left) on step 1.3 → p -> q
+    await selectSteps(page, '1.3')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 7: ∧ Elimination (Right) on step 4 → q -> r
-    await selectSteps(page, '4')
+    // Step 1.6: ∧ Elimination (Right) on step 1.3 → q -> r
+    await selectSteps(page, '1.3')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 8: Modus Ponens on steps 3 (p) and 6 (p -> q) → q
-    await selectSteps(page, '3', '6')
+    // Step 1.7: Modus Ponens on steps 1.2 (p) and 1.5 (p -> q) → q
+    await selectSteps(page, '1.2', '1.5')
     await applyRule(page, 'Modus Ponens')
 
-    // Step 9: Modus Ponens on steps 8 (q) and 7 (q -> r) → r
-    await selectSteps(page, '8', '7')
+    // Step 1.8: Modus Ponens on steps 1.7 (q) and 1.6 (q -> r) → r
+    await selectSteps(page, '1.7', '1.6')
     await applyRule(page, 'Modus Ponens')
 
-    // Step 10: Modus Ponens on steps 9 (r) and 5 (r -> s) → s
-    await selectSteps(page, '9', '5')
+    // Step 1.9: Modus Ponens on steps 1.8 (r) and 1.4 (r -> s) → s
+    await selectSteps(page, '1.8', '1.4')
     await applyRule(page, 'Modus Ponens')
 
     // Step 11: → Introduction — closes subproof

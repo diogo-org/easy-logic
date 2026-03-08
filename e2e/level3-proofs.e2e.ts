@@ -43,7 +43,7 @@ async function selectSteps(page: Page, ...lineNumbers: string[]) {
     const escaped = ln.replace(/\./g, '\\.')
     const stepRow = page
       .locator('.MuiPaper-root')
-      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.\\s`) })
+      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.`) })
       .first()
     await stepRow.click()
   }
@@ -161,20 +161,20 @@ test.describe('Level 3 — Subproofs (→ Introduction)', () => {
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 4: ∧ Elimination (Left) on step 3 → p -> q
-    await selectSteps(page, '3')
+    // Step 1.3: ∧ Elimination (Left) on step 1.2 → p -> q
+    await selectSteps(page, '1.2')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 5: ∧ Elimination (Right) on step 3 → q -> r
-    await selectSteps(page, '3')
+    // Step 1.4: ∧ Elimination (Right) on step 1.2 → q -> r
+    await selectSteps(page, '1.2')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 6: Modus Ponens on steps 2 (p) and 4 (p -> q) → q
-    await selectSteps(page, '2', '4')
+    // Step 1.5: Modus Ponens on steps 1.1 (p) and 1.3 (p -> q) → q
+    await selectSteps(page, '1.1', '1.3')
     await applyRule(page, 'Modus Ponens')
 
-    // Step 7: Modus Ponens on steps 6 (q) and 5 (q -> r) → r
-    await selectSteps(page, '6', '5')
+    // Step 1.6: Modus Ponens on steps 1.5 (q) and 1.4 (q -> r) → r
+    await selectSteps(page, '1.5', '1.4')
     await applyRule(page, 'Modus Ponens')
 
     // Step 8: → Introduction — closes subproof
@@ -218,12 +218,12 @@ test.describe('Level 3 — Subproofs (→ Introduction)', () => {
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 4: ∧ Elimination (Left) on step 2 → p
-    await selectSteps(page, '2')
+    // Step 1.3: ∧ Elimination (Left) on step 1.1 → p
+    await selectSteps(page, '1.1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 5: ∧ Introduction on steps 4 (p) and 3 (r) → p ^ r
-    await selectSteps(page, '4', '3')
+    // Step 1.4: ∧ Introduction on steps 1.3 (p) and 1.2 (r) → p ^ r
+    await selectSteps(page, '1.3', '1.2')
     await applyRule(page, '∧ Introduction')
 
     // Step 6: → Introduction — closes subproof

@@ -49,7 +49,7 @@ async function selectSteps(page: Page, ...lineNumbers: string[]) {
     const escaped = ln.replace(/\./g, '\\.')
     const stepRow = page
       .locator('.MuiPaper-root')
-      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.\\s`) })
+      .filter({ hasText: new RegExp(`^\\s*${escaped}\\.`) })
       .first()
     await stepRow.click()
   }
@@ -168,12 +168,12 @@ test.describe('Level 2 — Multiple Steps', () => {
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Left)')
 
-    // Step 4: ∧ Elimination (Right) on step 3 → q
-    await selectSteps(page, '3')
+    // Step 1.3: ∧ Elimination (Right) on step 1.2 → q
+    await selectSteps(page, '1.2')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 5: Modus Ponens on steps 2 (q→r) and 4 (q) → r
-    await selectSteps(page, '2', '4')
+    // Step 1.4: Modus Ponens on steps 1.1 (q→r) and 1.3 (q) → r
+    await selectSteps(page, '1.1', '1.3')
     await applyRule(page, 'Modus Ponens')
 
     // Step 6: → Introduction — closes subproof
@@ -214,8 +214,8 @@ test.describe('Level 2 — Multiple Steps', () => {
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 4: Modus Tollens on steps 2 and 3 → ~p
-    await selectSteps(page, '2', '3')
+    // Step 1.3: Modus Tollens on steps 1.1 and 1.2 → ~p
+    await selectSteps(page, '1.1', '1.2')
     await applyRule(page, 'Modus Tollens')
 
     // Step 5: → Introduction → closes subproof
@@ -258,8 +258,8 @@ test.describe('Level 2 — Multiple Steps', () => {
     await selectSteps(page, '1')
     await applyRule(page, '∧ Elimination (Right)')
 
-    // Step 4: Disjunctive Syllogism on steps 2 and 3 → q
-    await selectSteps(page, '2', '3')
+    // Step 1.3: Disjunctive Syllogism on steps 1.1 and 1.2 → q
+    await selectSteps(page, '1.1', '1.2')
     await applyRule(page, 'Disjunctive Syllogism')
 
     // Step 5: → Introduction → closes subproof
