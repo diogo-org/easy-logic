@@ -116,6 +116,241 @@ describe('NaturalDeduction', () => {
       expect(result.applicable).toBe(false)
       expect(result.reason).toBe('No open assumption to close')
     })
+
+    it('marks modus ponens as not applicable when no implication exists', () => {
+      const state: ProofState = {
+        goal: 'q',
+        premises: [],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: 'q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [3],
+        isComplete: false,
+      }
+
+      const mpRule = nd.getRules().find((r) => r.id === 'mp')!
+      const result = nd.checkApplicability(mpRule, state)
+
+      expect(result.applicable).toBe(false)
+    })
+
+    it('marks modus ponens as applicable when an implication exists', () => {
+      const state: ProofState = {
+        goal: 'q',
+        premises: [],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: 'p -> q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [3],
+        isComplete: false,
+      }
+
+      const mpRule = nd.getRules().find((r) => r.id === 'mp')!
+      const result = nd.checkApplicability(mpRule, state)
+
+      expect(result.applicable).toBe(true)
+    })
+
+    it('marks modus tollens as not applicable when no implication exists', () => {
+      const state: ProofState = {
+        goal: '~p',
+        premises: [],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: '~q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [3],
+        isComplete: false,
+      }
+
+      const mtRule = nd.getRules().find((r) => r.id === 'mt')!
+      const result = nd.checkApplicability(mtRule, state)
+
+      expect(result.applicable).toBe(false)
+    })
+
+    it('marks modus tollens as applicable when implication and negation exist', () => {
+      const state: ProofState = {
+        goal: '~p',
+        premises: [],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p -> q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: '~q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [3],
+        isComplete: false,
+      }
+
+      const mtRule = nd.getRules().find((r) => r.id === 'mt')!
+      const result = nd.checkApplicability(mtRule, state)
+
+      expect(result.applicable).toBe(true)
+    })
+
+    it('marks double negation as not applicable when no double negation exists', () => {
+      const state: ProofState = {
+        goal: 'p',
+        premises: [],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+
+      const dnRule = nd.getRules().find((r) => r.id === 'double_neg')!
+      const result = nd.checkApplicability(dnRule, state)
+
+      expect(result.applicable).toBe(false)
+    })
+
+    it('marks double negation as applicable when ~~P exists', () => {
+      const state: ProofState = {
+        goal: 'p',
+        premises: [],
+        steps: [
+          { id: 1, lineNumber: '1', formula: '~~p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+
+      const dnRule = nd.getRules().find((r) => r.id === 'double_neg')!
+      const result = nd.checkApplicability(dnRule, state)
+
+      expect(result.applicable).toBe(true)
+    })
+
+    it('marks and_elim_left as not applicable when no conjunction exists', () => {
+      const state: ProofState = {
+        goal: 'p',
+        premises: [],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'and_elim_left')!
+      const result = nd.checkApplicability(rule, state)
+
+      expect(result.applicable).toBe(false)
+    })
+
+    it('marks and_elim_right as not applicable when no conjunction exists', () => {
+      const state: ProofState = {
+        goal: 'q',
+        premises: [],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p -> q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'and_elim_right')!
+      const result = nd.checkApplicability(rule, state)
+
+      expect(result.applicable).toBe(false)
+    })
+
+    it('marks and_elim_left as applicable when conjunction exists', () => {
+      const state: ProofState = {
+        goal: 'p',
+        premises: [],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p ^ q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [2],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'and_elim_left')!
+      const result = nd.checkApplicability(rule, state)
+
+      expect(result.applicable).toBe(true)
+    })
+
+    it('marks disj_syl as not applicable when no disjunction exists', () => {
+      const state: ProofState = {
+        goal: 'q',
+        premises: [],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: '~p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [3],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'disj_syl')!
+      const result = nd.checkApplicability(rule, state)
+
+      expect(result.applicable).toBe(false)
+    })
+
+    it('marks disj_syl as not applicable when no negation exists', () => {
+      const state: ProofState = {
+        goal: 'q',
+        premises: [],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: 'p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [3],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'disj_syl')!
+      const result = nd.checkApplicability(rule, state)
+
+      expect(result.applicable).toBe(false)
+    })
+
+    it('marks disj_syl as applicable when disjunction and negation exist', () => {
+      const state: ProofState = {
+        goal: 'q',
+        premises: [],
+        steps: [
+          { id: 1, lineNumber: '1', formula: 'p | q', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+          { id: 2, lineNumber: '2', formula: '~p', ruleKey: RULE_KEYS.PREMISE, dependencies: [], justificationKey: 'justificationPremise', depth: 0 },
+        ],
+        currentDepth: 0,
+        currentSubproofId: '',
+        nextStepInSubproof: [3],
+        isComplete: false,
+      }
+
+      const rule = nd.getRules().find((r) => r.id === 'disj_syl')!
+      const result = nd.checkApplicability(rule, state)
+
+      expect(result.applicable).toBe(true)
+    })
   })
 
   describe('applyRule', () => {

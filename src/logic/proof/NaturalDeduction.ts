@@ -6,6 +6,7 @@
 
 import { ProofSystem, Rule, ProofState, ProofStep, ApplicableRule, KnowledgeBase, RULE_KEYS } from './types'
 import { tokenizeAndParse, FormulaType } from '../formula/common'
+import { FormulaTypeValue } from '../formula/types'
 import { knowledgeBases } from './knowledgeBases'
 import { naturalDeductionRules } from './rules'
 import { formulaToString, isFullyParenthesized, parseImplication, formulasMatch } from './formulaHelpers'
@@ -42,49 +43,12 @@ export class NaturalDeduction implements ProofSystem {
 
     // Implication introduction only works if we have an open assumption
     if (rule.id === 'impl_intro') {
-      const hasOpenAssumptionAtDepth = state.currentDepth > 0 &&
-        state.steps.some((step) => step.depth === state.currentDepth && step.ruleKey === RULE_KEYS.ASSUME)
-      const lastStep = state.steps[state.steps.length - 1]
-      const hasConclusionAtCurrentDepth = Boolean(lastStep && lastStep.depth === state.currentDepth)
-      const hasOpenAssumption = hasOpenAssumptionAtDepth && hasConclusionAtCurrentDepth
-      return {
-        ...rule,
-        applicable: hasOpenAssumption,
-        reason: hasOpenAssumption ? undefined : 'No open assumption to close',
-      }
+      return this.checkImplIntroApplicability(rule, state)
     }
 
     // Or elimination needs a disjunction and two implications with matching antecedents
     if (rule.id === 'or_elim') {
-      const availSteps = state.steps.filter(s => s.depth <= state.currentDepth)
-      const hasDisjunction = availSteps.some(s => {
-        try {
-          const parsed = tokenizeAndParse(s.formula)
-          return parsed.type === FormulaType.OR
-        } catch {
-          return false
-        }
-      })
-      if (!hasDisjunction) {
-        return {
-          ...rule,
-          applicable: false,
-          reason: 'Need a disjunction (P∨Q) to apply this rule',
-        }
-      }
-      const implicationCount = availSteps.filter(s => {
-        try {
-          return parseImplication(s.formula) !== null
-        } catch {
-          return false
-        }
-      }).length
-      const needsMore = implicationCount < 2
-      return {
-        ...rule,
-        applicable: !needsMore,
-        reason: needsMore ? 'Need P∨Q plus two implications P→C and Q→C (use Assume + →I to build each case)' : undefined,
-      }
+      return this.checkOrElimApplicability(rule, state)
     }
 
     // Check if we have enough steps at current depth
@@ -96,9 +60,102 @@ export class NaturalDeduction implements ProofSystem {
       }
     }
 
-    // For now, mark all other rules as potentially applicable
-    // More sophisticated checking would parse formulas and match patterns
+    return this.checkFormulaBasedApplicability(rule, availableSteps)
+  }
+
+  /** Check applicability for rules that require specific formula shapes */
+  private checkFormulaBasedApplicability(rule: Rule, availableSteps: ProofStep[]): ApplicableRule {
+    // Modus Ponens requires at least one implication
+    if (rule.id === 'mp') {
+      const hasImplication = availableSteps.some(s => {
+        try { return parseImplication(s.formula) !== null } catch { return false }
+      })
+      if (!hasImplication) {
+        return { ...rule, applicable: false, reason: 'Need an implication (P→Q) to apply Modus Ponens' }
+      }
+    }
+
+    // Modus Tollens requires an implication and a negation
+    if (rule.id === 'mt') {
+      const hasImplication = availableSteps.some(s => {
+        try { return parseImplication(s.formula) !== null } catch { return false }
+      })
+      const hasNegation = this.stepsHaveType(availableSteps, FormulaType.NOT)
+      if (!hasImplication || !hasNegation) {
+        return { ...rule, applicable: false, reason: 'Need an implication (P→Q) and a negation (¬Q)' }
+      }
+    }
+
+    // Double negation requires ¬¬P
+    if (rule.id === 'double_neg') {
+      const hasDoubleNeg = availableSteps.some(s => {
+        try {
+          const parsed = tokenizeAndParse(s.formula)
+          return parsed.type === FormulaType.NOT && parsed.left?.type === FormulaType.NOT
+        } catch { return false }
+      })
+      if (!hasDoubleNeg) {
+        return { ...rule, applicable: false, reason: 'Need a double negation (¬¬P)' }
+      }
+    }
+
+    // And elimination requires a conjunction
+    if (rule.id === 'and_elim_left' || rule.id === 'and_elim_right') {
+      if (!this.stepsHaveType(availableSteps, FormulaType.AND)) {
+        return { ...rule, applicable: false, reason: 'Need a conjunction (P∧Q)' }
+      }
+    }
+
+    // Disjunctive Syllogism requires a disjunction and a negation
+    if (rule.id === 'disj_syl') {
+      if (!this.stepsHaveType(availableSteps, FormulaType.OR) || !this.stepsHaveType(availableSteps, FormulaType.NOT)) {
+        return { ...rule, applicable: false, reason: 'Need a disjunction (P∨Q) and a negation (¬P or ¬Q)' }
+      }
+    }
+
     return { ...rule, applicable: true }
+  }
+
+  /** Check if any step has a formula of the given top-level type */
+  private stepsHaveType(steps: ProofStep[], type: FormulaTypeValue): boolean {
+    return steps.some(s => {
+      try { return tokenizeAndParse(s.formula).type === type } catch { return false }
+    })
+  }
+
+  /** Check →I applicability */
+  private checkImplIntroApplicability(rule: Rule, state: ProofState): ApplicableRule {
+    const hasOpenAssumptionAtDepth = state.currentDepth > 0 &&
+      state.steps.some((step) => step.depth === state.currentDepth && step.ruleKey === RULE_KEYS.ASSUME)
+    const lastStep = state.steps[state.steps.length - 1]
+    const hasConclusionAtCurrentDepth = Boolean(lastStep?.depth === state.currentDepth)
+    const hasOpenAssumption = hasOpenAssumptionAtDepth && hasConclusionAtCurrentDepth
+    return {
+      ...rule,
+      applicable: hasOpenAssumption,
+      reason: hasOpenAssumption ? undefined : 'No open assumption to close',
+    }
+  }
+
+  /** Check ∨E applicability */
+  private checkOrElimApplicability(rule: Rule, state: ProofState): ApplicableRule {
+    const availSteps = state.steps.filter(s => s.depth <= state.currentDepth)
+    if (!this.stepsHaveType(availSteps, FormulaType.OR)) {
+      return {
+        ...rule,
+        applicable: false,
+        reason: 'Need a disjunction (P∨Q) to apply this rule',
+      }
+    }
+    const implicationCount = availSteps.filter(s => {
+      try { return parseImplication(s.formula) !== null } catch { return false }
+    }).length
+    const needsMore = implicationCount < 2
+    return {
+      ...rule,
+      applicable: !needsMore,
+      reason: needsMore ? 'Need P∨Q plus two implications P→C and Q→C (use Assume + →I to build each case)' : undefined,
+    }
   }
 
   /**
