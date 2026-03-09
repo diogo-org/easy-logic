@@ -480,6 +480,7 @@ export default function ProofAssistantPage() {
             {/* 🏆 THE MAIN CELEBRATION CARD 🏆 */}
             <Paper
               elevation={24}
+              onClick={closeCelebration}
               sx={{
                 p: { xs: 3, sm: 6 },
                 textAlign: 'center',
@@ -494,6 +495,7 @@ export default function ProofAssistantPage() {
                 maxWidth: { xs: '90vw', sm: '500px' },
                 maxHeight: { xs: '85vh', sm: 'auto' },
                 overflowY: { xs: 'auto', sm: 'visible' },
+                cursor: 'pointer',
               }}
             >
               {/* Corner decorations - hidden on mobile */}

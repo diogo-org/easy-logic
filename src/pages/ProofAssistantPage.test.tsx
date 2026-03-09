@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import ProofAssistantPage from './ProofAssistantPage'
@@ -731,6 +731,64 @@ describe('ProofAssistantPage', () => {
       const allCheckboxes = screen.getAllByRole('checkbox')
       // At least as many checkboxes as before (premises) + 1 (new assumption)
       expect(allCheckboxes.length).toBeGreaterThanOrEqual(checkboxesBefore + 1)
+    })
+  })
+
+  it('should dismiss celebration overlay when clicking on the card (bug-36)', async () => {
+    const user = userEvent.setup()
+    renderComponent()
+
+    // Select Modus Ponens KB
+    const buttons = screen.getAllByRole('button')
+    const mpButton = buttons.find(btn => btn.textContent === 'Modus Ponens')
+    if (mpButton) {
+      await user.click(mpButton)
+    }
+
+    // Click the first suggested goal (q) to start the proof directly
+    await waitFor(() => {
+      const listItems = screen.getAllByRole('button').filter(
+        btn => btn.classList.contains('MuiListItemButton-root')
+      )
+      expect(listItems.length).toBeGreaterThan(0)
+    })
+    const listItems = screen.getAllByRole('button').filter(
+      btn => btn.classList.contains('MuiListItemButton-root')
+    )
+    await user.click(listItems[0])
+
+    // Wait for proof UI to load with premises
+    await waitFor(() => {
+      expect(screen.getByText(/Proof Steps/i)).toBeInTheDocument()
+    })
+
+    // Select both premise steps
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]')
+    for (const cb of checkboxes) {
+      await user.click(cb)
+    }
+
+    // Apply Modus Ponens rule
+    const ruleButtons = screen.getAllByRole('button')
+    const mpRuleButton = ruleButtons.find(btn => btn.textContent === 'MP')
+    if (mpRuleButton && !mpRuleButton.hasAttribute('disabled')) {
+      await user.click(mpRuleButton)
+    }
+
+    // Celebration should appear
+    await waitFor(() => {
+      expect(screen.getByText(/BOOM/i)).toBeInTheDocument()
+    })
+
+    // Click on the celebration card text to dismiss
+    const celebrationText = screen.getByText(/BOOM/i)
+    fireEvent.click(celebrationText)
+
+    // Celebration should be dismissed — the Backdrop becomes invisible
+    await waitFor(() => {
+      const backdrop = document.querySelector('.MuiBackdrop-root')
+      expect(backdrop).toBeTruthy()
+      expect(backdrop!.getAttribute('aria-hidden')).toBe('true')
     })
   })
 })
