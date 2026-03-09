@@ -29,8 +29,8 @@ export function FormulaDisplay({ latex, error }: FormulaDisplayProps) {
   }
 
   return (
-    <div className="formula-display">
+    <span className="formula-display">
       <InlineMath math={latex} />
-    </div>
+    </span>
   )
 }

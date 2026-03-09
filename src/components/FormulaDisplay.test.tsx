@@ -98,6 +98,12 @@ describe('FormulaDisplay', () => {
     expect(errorIcon).toBeInTheDocument()
   })
 
+  it('renders as an inline span element, not a block div (bug-35)', () => {
+    const { container } = render(<FormulaDisplay latex="p" />)
+    const wrapper = container.querySelector('.formula-display')
+    expect(wrapper?.tagName).toBe('SPAN')
+  })
+
   it('should include error message text with error icon', () => {
     render(<FormulaDisplay latex="" error="Unexpected token" />)
     const errorMsg = screen.getByText(/Unexpected token/i)

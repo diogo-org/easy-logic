@@ -1,7 +1,7 @@
 {
   "name": "easy-logic",
   "private": true,
-  "version": "0.4.21",
+  "version": "0.4.22",
   "type": "module",
   "homepage": "https://diogo.github.io/easy-logic",
   "scripts": {
