@@ -110,6 +110,8 @@ export default function ProofAssistantPage() {
     handleReset,
   } = useProofState(initialFormula, triggerCelebration)
 
+  const goalValidation = customGoal.trim() ? parseFormula(customGoal.trim()) : null
+
   const knowledgeBases = proofSystem.getKnowledgeBases()
 
   // Provide guided hints based on the current state
@@ -259,8 +261,10 @@ export default function ProofAssistantPage() {
             value={customGoal}
             onChange={(e) => setCustomGoal(e.target.value)}
             placeholder={t('customGoalPlaceholder')}
+            error={Boolean(goalValidation?.error)}
+            helperText={goalValidation?.error}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && customGoal.trim()) {
+              if (e.key === 'Enter' && customGoal.trim() && !goalValidation?.error) {
                 handleCustomGoalSubmit()
               }
             }}
@@ -271,7 +275,7 @@ export default function ProofAssistantPage() {
           <Button
             onClick={handleCustomGoalSubmit}
             variant="contained"
-            disabled={!customGoal.trim()}
+            disabled={!customGoal.trim() || Boolean(goalValidation?.error)}
             sx={{
               bgcolor: '#6b5b87',
               color: '#fff',

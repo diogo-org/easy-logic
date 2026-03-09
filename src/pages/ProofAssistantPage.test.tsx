@@ -791,5 +791,41 @@ describe('ProofAssistantPage', () => {
       expect(backdrop!.getAttribute('aria-hidden')).toBe('true')
     })
   })
+
+  it('should disable Start Proof button for syntactically invalid formula', async () => {
+    const user = userEvent.setup()
+    renderComponent()
+
+    const customGoalInput = screen.getByLabelText(/Custom Goal/i)
+    await user.type(customGoalInput, 'p ^ ^ q')
+
+    const startButton = screen.getByRole('button', { name: /Start Proof/i })
+    expect(startButton).toBeDisabled()
+  })
+
+  it('should show error helper text for invalid formula', async () => {
+    const user = userEvent.setup()
+    renderComponent()
+
+    const customGoalInput = screen.getByLabelText(/Custom Goal/i)
+    await user.type(customGoalInput, 'p ^ ^ q')
+
+    // Should display an error message below the text field
+    await waitFor(() => {
+      const helperText = screen.getByText(/unexpected token|invalid|error/i)
+      expect(helperText).toBeInTheDocument()
+    })
+  })
+
+  it('should enable Start Proof button for valid formula', async () => {
+    const user = userEvent.setup()
+    renderComponent()
+
+    const customGoalInput = screen.getByLabelText(/Custom Goal/i)
+    await user.type(customGoalInput, 'p ^ q')
+
+    const startButton = screen.getByRole('button', { name: /Start Proof/i })
+    expect(startButton).toBeEnabled()
+  })
 })
 
