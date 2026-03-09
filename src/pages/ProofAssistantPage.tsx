@@ -615,7 +615,7 @@ export default function ProofAssistantPage() {
                       <ProofStep
                         key={step.id}
                         step={step}
-                        isSelectable={step.depth === proofState.currentDepth && !proofState.isComplete}
+                        isSelectable={step.depth <= proofState.currentDepth && !proofState.isComplete}
                         isSelected={selectedSteps.includes(step.id)}
                         onToggleSelect={handleToggleStepSelection}
                         onDelete={handleDeleteStep}

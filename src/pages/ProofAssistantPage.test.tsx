@@ -678,5 +678,60 @@ describe('ProofAssistantPage', () => {
     // Should still render without errors - dialog should be open initially
     expect(screen.getByText('Choose a Goal to Prove')).toBeInTheDocument()
   })
+
+  it('should keep depth-0 steps selectable when inside a subproof (bug-32)', async () => {
+    const user = userEvent.setup()
+    renderComponent()
+
+    // Select Modus Ponens KB (provides premises at depth 0)
+    const buttons = screen.getAllByRole('button')
+    const mpButton = buttons.find(btn => btn.textContent === 'Modus Ponens')
+    expect(mpButton).toBeDefined()
+    await user.click(mpButton!)
+
+    // Enter a goal that requires implication (so Assume is applicable)
+    const goalInput = screen.getByLabelText(/Custom Goal/i)
+    await user.type(goalInput, 'p → q')
+
+    const startButton = screen.getByRole('button', { name: /Start Proof/i })
+    await user.click(startButton)
+
+    // Wait for proof UI to render with checkboxes for premises
+    await waitFor(() => {
+      expect(screen.getByText(/Proof Steps/i)).toBeInTheDocument()
+      expect(screen.getAllByRole('checkbox').length).toBeGreaterThan(0)
+    })
+
+    const checkboxesBefore = screen.getAllByRole('checkbox').length
+
+    // Click the Assume rule button to start a subproof (enters depth 1)
+    const assumeButton = screen.getAllByRole('button').find(
+      btn => btn.textContent?.toUpperCase() === 'ASSUME'
+    )
+    expect(assumeButton).toBeDefined()
+    await user.click(assumeButton!)
+
+    // Assume rule requires input — enter a formula and confirm
+    const dialog = await waitFor(() => {
+      const dialogs = document.querySelectorAll('[role="dialog"]')
+      expect(dialogs.length).toBeGreaterThan(0)
+      return dialogs[dialogs.length - 1]
+    })
+    const formulaInput = dialog.querySelector('input') as HTMLInputElement
+    expect(formulaInput).toBeTruthy()
+    await user.type(formulaInput, 'r')
+    const applyButton = screen.getByRole('button', { name: /apply/i })
+    await user.click(applyButton)
+
+    // Now inside a subproof (currentDepth === 1).
+    // Depth-0 steps (premises) should still have checkboxes.
+    // With the bug, only the assumption step (depth 1) gets a checkbox;
+    // premises (depth 0) lose theirs. After the fix, all steps have checkboxes.
+    await waitFor(() => {
+      const allCheckboxes = screen.getAllByRole('checkbox')
+      // At least as many checkboxes as before (premises) + 1 (new assumption)
+      expect(allCheckboxes.length).toBeGreaterThanOrEqual(checkboxesBefore + 1)
+    })
+  })
 })
 
